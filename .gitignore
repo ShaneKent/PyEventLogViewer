@@ -1,0 +1,8 @@
+# Build artifacts
+build/
+dist/
+__pycache__/
+*.egg-info/
+*.egg
+# Pycharm project files
+.idea/
