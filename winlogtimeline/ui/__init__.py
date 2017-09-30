@@ -1,4 +1,5 @@
 import tkinter as tk
+from winlogtimeline import util
 
 
 class GUI(tk.Tk):
@@ -26,7 +27,7 @@ class EventSection(tk.Canvas):
         for i in range(0, 50):
             label = tk.Label(self.frame, text="Event " + str(i), bg=colors[i % 5], anchor=tk.W, *args, **kwargs)
             label.pack(side=tk.TOP, fill=tk.X)
-        # --
+            # --
 
 
 class QueryBar(tk.Frame):
@@ -40,29 +41,36 @@ class QueryBar(tk.Frame):
         self.variable = tk.StringVar(self.querybar)
         self.variable.set("All")
 
-        self.dropDown = tk.OptionMenu(self.querybar, self.variable, "System Startup", "System Shutdown", "Time Change", "All")
+        self.dropDown = tk.OptionMenu(self.querybar, self.variable, "System Startup", "System Shutdown", "Time Change",
+                                      "All")
         self.dropDown.config(width="15")
         self.dropDown.pack(side=tk.LEFT)
 
         # -- REMOVE WHEN NOT NEEDED. Only for prototyping reasons.
-        self.button = tk.Button(self.querybar, text="Query", command=lambda: parent.statusbar.status.config(text="Queried for " + self.variable.get() + " events."))
+        self.button = tk.Button(self.querybar, text="Query", command=lambda: parent.statusbar.status.config(
+            text="Queried for " + self.variable.get() + " events."))
         self.button.pack(side=tk.LEFT)
         # --
 
+
 class StatusBar(tk.Label):
     def __init__(self, parent, *args, **kwargs):
-        self.status = tk.Label(parent, text="This is a status bar.", bd=1, relief=tk.SUNKEN, anchor=tk.W, *args, **kwargs)
+        self.status = tk.Label(parent, text="This is a status bar.", bd=1, relief=tk.SUNKEN, anchor=tk.W, *args,
+                               **kwargs)
         self.status.pack(side=tk.BOTTOM, fill=tk.X)
+
 
 class Toolbar(tk.Frame):
     def __init__(self, parent, *args, **kwargs):
         self.toolbar = tk.Frame(parent, bd=1, relief=tk.SUNKEN, *args, **kwargs)
 
-        self.importPhoto = tk.PhotoImage(file="./ui/icons/import.gif")
-        self.formatPhoto = tk.PhotoImage(file="./ui/icons/format.gif")
+        self.importPhoto = tk.PhotoImage(file=util.get_package_data_path(__file__, 'icons', 'import.gif'))
+        self.formatPhoto = tk.PhotoImage(file=util.get_package_data_path(__file__, 'icons', 'format.gif'))
 
-        self.importButton = tk.Button(self.toolbar, image=self.importPhoto, width="20", height="20", command=lambda: self.importFunction(parent))
-        self.formatButton = tk.Button(self.toolbar, image=self.formatPhoto, width="20", height="20", command=lambda: self.formatFunction(parent))
+        self.importButton = tk.Button(self.toolbar, image=self.importPhoto, width="20", height="20",
+                                      command=lambda: self.importFunction(parent))
+        self.formatButton = tk.Button(self.toolbar, image=self.formatPhoto, width="20", height="20",
+                                      command=lambda: self.formatFunction(parent))
 
         self.importButton.pack()
         self.formatButton.pack()
@@ -76,6 +84,7 @@ class Toolbar(tk.Frame):
     def formatFunction(self, parent):
         parent.statusbar.status.config(text="'Format' button pressed.")
         return
+
 
 class Menubar(tk.Frame):
     def __init__(self, parent, *args, **kwargs):
