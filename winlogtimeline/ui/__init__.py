@@ -22,7 +22,8 @@ class EventSection(tk.Canvas):
         self.frame.pack(fill=tk.BOTH)
 
         # -- REMOVE WHEN NOT NEEDED. Only for prototyping reasons.
-        colors = ["red", "blue", "green", "yellow", "orange"]
+        # colors = ["red", "blue", "green", "yellow", "orange"]
+        colors = ['#DDCEFF', '#FFCECE', '#CEDEF4', '#FFFFC8', '#B5FFC8', '#FFCEFF']
 
         for i in range(0, 50):
             label = tk.Label(self.frame, text="Event " + str(i), bg=colors[i % 5], anchor=tk.W, *args, **kwargs)

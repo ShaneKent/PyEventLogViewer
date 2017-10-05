@@ -21,6 +21,8 @@ SCRIPT_DIR = 'bin'
 # The glob for identifying script files
 SCRIPT_GLOBS = ['*.py', '*.pyw']
 
+DEPENDENCIES = ['libevtx-python']
+
 """Automated argument formatting and setup call"""
 # Grab all of the packages
 pkgs = ['{root}.{module}'.format(root=PKG_DIR, module=pkg) for pkg in find_packages(where=LIB_DIR)]
@@ -37,4 +39,5 @@ setup(
     packages=pkgs,
     package_data=pkg_data,
     scripts=scripts,
+    install_requires=DEPENDENCIES,
 )
