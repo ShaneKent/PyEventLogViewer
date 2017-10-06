@@ -65,8 +65,8 @@ class Toolbar(tk.Frame):
     def __init__(self, parent, *args, **kwargs):
         self.toolbar = tk.Frame(parent, bd=1, relief=tk.SUNKEN, *args, **kwargs)
 
-        self.importPhoto = tk.PhotoImage(file=util.get_package_data_path(__file__, 'icons', 'import.gif'))
-        self.formatPhoto = tk.PhotoImage(file=util.get_package_data_path(__file__, 'icons', 'format.gif'))
+        self.importPhoto = tk.PhotoImage(file=util.data.get_package_data_path(__file__, 'icons', 'import.gif'))
+        self.formatPhoto = tk.PhotoImage(file=util.data.get_package_data_path(__file__, 'icons', 'format.gif'))
 
         self.importButton = tk.Button(self.toolbar, image=self.importPhoto, width="20", height="20",
                                       command=lambda: self.importFunction(parent))
