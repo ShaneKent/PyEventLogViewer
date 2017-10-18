@@ -1,8 +1,5 @@
-import pyevtx
 import Evtx.Evtx as evtx
-import lxml.etree
-import winlogtimeline.util as util
-
+from lxml import etree
 
 # Note: It may be useful to take config out of this whole equation. Config could store the default filter configuration,
 # and that could be copied into the project config to allow user modifications.
@@ -16,10 +13,16 @@ def import_log(log_file, project, config):
     """
     with evtx.Evtx(log_file) as log:            # Open the event logs.
         records = collect_records(log)          # Get existing records.
-        machine_name = get_machine_name(records)
+        # machine_name = get_machine_name(records)
 
-        print(machine_name)
+        ids = []
+        for record in records:
+            record = record.lxml()
+            sys = record.find("%s%s" % ("{http://schemas.microsoft.com/win/2004/08/events/event}" , "System"))
+            id = sys.find("%s%s" % ("{http://schemas.microsoft.com/win/2004/08/events/event}" , "EventID"))
+            ids.append(id.text)
 
+        print(ids)
     # Pull the logs from the event log file
     # event_records = collect_records(event_file) + collect_deleted_records(event_file)
     # machine_name = get_machine_name(event_file)
@@ -61,19 +64,6 @@ def get_machine_name(records):
     :return: A unique identifier for the machine.
     """
     # TODO: determine a unique identifier for machines that can be pulled from the event logs.
-
-    names = []
-
-    for record in records:
-        roots = record.lxml().getchildren()
-        children = roots[0]
-
-        name = children.find("{http://schemas.microsoft.com/win/2004/08/events/event}Computer").text
-
-        if name not in names:
-            names.append(name)
-
-    print(names)
 
     return ''
 
