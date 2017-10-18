@@ -1,4 +1,6 @@
 import pyevtx
+import Evtx.Evtx as evtx
+import lxml.etree
 import winlogtimeline.util as util
 
 
@@ -12,23 +14,26 @@ def import_log(log_file, project, config):
     :param config: A config dictionary.
     :return: None
     """
-    # Open the event log
-    event_file = pyevtx.file()
-    event_file.open(log_file)
+    with evtx.Evtx(log_file) as log:            # Open the event logs.
+        records = collect_records(log)          # Get existing records.
+        machine_name = get_machine_name(records)
+
+        print(machine_name)
+
     # Pull the logs from the event log file
-    event_records = collect_records(event_file) + collect_deleted_records(event_file)
-    machine_name = get_machine_name(event_file)
-    logs = (util.logs.parse_record(record, machine_name) for record in event_records)
-    logs = filter_logs(logs, project, config)
-    for log in logs:
-        project.write_log_data(log)
+    # event_records = collect_records(event_file) + collect_deleted_records(event_file)
+    # machine_name = get_machine_name(event_file)
+    # logs = (util.logs.parse_record(record, machine_name) for record in event_records)
+    # logs = filter_logs(logs, project, config)
+    # for log in logs:
+    #    project.write_log_data(log)
 
     # Pull verification data from the event log file
-    file_hash = get_log_file_hash(log_file)
-    project.write_verification_data(file_hash, log_file)
+    # file_hash = get_log_file_hash(log_file)
+    # project.write_verification_data(file_hash, log_file)
 
     # Close the event log
-    event_file.close()
+    # event_file.close()
 
 
 def collect_records(event_file):
@@ -36,7 +41,9 @@ def collect_records(event_file):
     :param event_file: An event log object.
     :return: A list of event records in the format returned by libevtx-python.
     """
-    pass
+    records = event_file.records()
+
+    return records
 
 
 def collect_deleted_records(event_file):
@@ -47,13 +54,27 @@ def collect_deleted_records(event_file):
     pass
 
 
-def get_machine_name(event_file):
+def get_machine_name(records):
     """
     Parses a log file to determine the machine it originated from.
     :param event_file: An event log object.
     :return: A unique identifier for the machine.
     """
     # TODO: determine a unique identifier for machines that can be pulled from the event logs.
+
+    names = []
+
+    for record in records:
+        roots = record.lxml().getchildren()
+        children = roots[0]
+
+        name = children.find("{http://schemas.microsoft.com/win/2004/08/events/event}Computer").text
+
+        if name not in names:
+            names.append(name)
+
+    print(names)
+
     return ''
 
 
