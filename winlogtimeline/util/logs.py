@@ -1,3 +1,5 @@
+import hashlib
+
 class Record:
     def __init__(self, **kwargs):
         self.timestamp_utc = kwargs['timestamp_utc']
@@ -30,8 +32,7 @@ class Record:
 
 
     def __hash__(self):
-        return hash(self.__key__)
-
+        return hashlib.md5(bytes(self.__key__(),'utf-8')).hexdigest()
 
 
 def parse_record(record, machine):
