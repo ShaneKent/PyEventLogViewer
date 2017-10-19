@@ -16,6 +16,13 @@ class Project:
         """
         pass
 
+    def save_as(self):
+        """
+        Changes the location of the project file and then calls save.
+        :return: None
+        """
+        pass
+
     def close(self):
         """
         Closes any open file objects.
