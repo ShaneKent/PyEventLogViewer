@@ -1,28 +1,22 @@
 import Evtx.Evtx as evtx
-from lxml import etree
+from threading import Thread
+
 
 # Note: It may be useful to take config out of this whole equation. Config could store the default filter configuration,
 # and that could be copied into the project config to allow user modifications.
 def import_log(log_file, project, config):
     """
-    Main routine to import an event log file into a project.
+    Main routine to import an event log file.
     :param log_file: A path to an event log file.
     :param project: A project instance.
     :param config: A config dictionary.
     :return: None
     """
-    with evtx.Evtx(log_file) as log:            # Open the event logs.
-        records = collect_records(log)          # Get existing records.
-        # machine_name = get_machine_name(records)
+    with evtx.Evtx(log_file) as log:  # Open the event logs.
+        evtx_records = collect_records(log)  # Get existing records.
 
-        ids = []
-        for record in records:
-            record = record.lxml()
-            sys = record.find("%s%s" % ("{http://schemas.microsoft.com/win/2004/08/events/event}" , "System"))
-            id = sys.find("%s%s" % ("{http://schemas.microsoft.com/win/2004/08/events/event}" , "EventID"))
-            ids.append(id.text)
+    return "Finished openning the event logs file."
 
-        print(ids)
     # Pull the logs from the event log file
     # event_records = collect_records(event_file) + collect_deleted_records(event_file)
     # machine_name = get_machine_name(event_file)
@@ -39,14 +33,41 @@ def import_log(log_file, project, config):
     # event_file.close()
 
 
+def get_xml_records(records):
+    """
+    Parse the given records into an XML format.
+    :param records: list of Evtx Record objects
+    :return: list of XML representations for record objects
+    """
+
+    xml_records = []  # 249.23 sec to complete. 31323 records - This was the fastest option I could achieve.
+    for record in records:
+        t = Thread(target=xml_records.append, args=(record.xml(),))
+        t.daemon = True
+        t.start()
+
+    return xml_records
+
+
+def get_lxml_records(records):
+    """
+    Parse the given records into an LXML format.
+    :param records: list of Evtx Record objects
+    :return: list of LXML representations for record objects
+    """
+
+    lxml_records = [record.lxml() for record in records]
+
+    return lxml_records
+
+
 def collect_records(event_file):
     """
     :param event_file: An event log object.
     :return: A list of event records in the format returned by libevtx-python.
     """
-    records = event_file.records()
 
-    return records
+    return event_file.records()
 
 
 def collect_deleted_records(event_file):
