@@ -1,5 +1,6 @@
 import hashlib
 
+
 class Record:
     def __init__(self, **kwargs):
         self.timestamp_utc = kwargs['timestamp_utc']
@@ -16,7 +17,6 @@ class Record:
         self.source_file_hash = kwargs['source_file_hash']
         self.record_hash = self.__hash__()
 
-
     # get unique id function that returns unique id for each log
     # __hash__ function (override)
     # timestamp_utc, event_id, description, computer name, event source, event log
@@ -30,9 +30,8 @@ class Record:
         key_string += self.event_log
         return key_string
 
-
     def __hash__(self):
-        return hashlib.md5(bytes(self.__key__(),'utf-8')).hexdigest()
+        return hashlib.md5(bytes(self.__key__(), 'utf-8')).hexdigest()
 
 
 def sort_logs(logs, property, descending=False):

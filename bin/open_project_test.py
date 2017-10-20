@@ -1,7 +1,9 @@
 import winlogtimeline.util
+import os
+
 
 def main():
-    proj_path = 'TestProject'
+    proj_path = os.path.join(winlogtimeline.util.data.get_appdir(), 'TestProject')
     project = winlogtimeline.util.project.Project(proj_path)
     project.close()
 
