@@ -1,9 +1,6 @@
-import Evtx.Evtx as evtx
-from threading import Thread
 import xmltodict
 from time import time
 import pyevtx
-
 
 # Note: It may be useful to take config out of this whole equation. Config could store the default filter configuration,
 # and that could be copied into the project config to allow user modifications.
@@ -16,27 +13,29 @@ def import_log(log_file, project, config):
     :return: None
     """
 
-    log = pyevtx.file()
-    log.open(log_file)
-
-    records = collect_records(log)
-    xmls = get_xml_records(records)
-
-    return "Finished opening the event logs file."
-
-
-def get_xml_records(records):
-    """
-    :param records: list of original record objects
-    :return: list of XML records
-    """
     start = time()
-    raw_xmls = [record.get_xml_string() for record in records]
+    log = pyevtx.open(log_file)
+    records = collect_records(log)  # + collect_deleted_records(log)
+    xml_records = xml_convert(records)
     stop = time()
 
-    print(stop - start)
+    taken = str(stop - start).split(".")[0]
 
-    return raw_xmls
+    return "Finished opening event log file. It took " + taken + " seconds."
+
+
+def xml_convert(records):
+    xmls = []
+    for i in range(0, len(records)):
+        record = records[i]
+
+        try:
+            xmls.append(xmltodict.parse(record))
+        except:
+            record = record.replace("\x00", "")  # This can not be the best way to do this...
+            xmls.append(xmltodict.parse(record))
+
+    return xmls
 
 def collect_records(event_file):
     """
@@ -44,12 +43,7 @@ def collect_records(event_file):
     :return: A list of event records in the format returned by libevtx-python.
     """
 
-    start = time()
-    records = [event_file.get_record(i) for i in range(event_file.get_number_of_records())]
-    stop = time()
-
-    print(stop - start)
-    print(len(records))
+    records = [event_file.get_record(i).xml_string for i in range(0, event_file.get_number_of_records())]
 
     return records
 

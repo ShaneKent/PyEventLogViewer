@@ -119,7 +119,7 @@ class Toolbar(tk.Frame):
 
     def importFunction(self, parent):
         def callback():
-            parent.statusbar.status.config(text="Reading in the Event Log file.")
+            parent.statusbar.status.config(text="Reading in the Event Log file named System.evtx")
             finish = collector.import_log("../tests/System.evtx", "", "")
             parent.statusbar.status.config(text=finish)
 
