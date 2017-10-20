@@ -37,6 +37,13 @@ class Project:
         # Load the project config
         self._config = None
 
+    def get_path(self):
+        """
+        Returns the absolute path to the project root.
+        :return:
+        """
+        return os.path.abspath(self._path)
+
     def save(self):
         """
         Writes changes to the database and project configuration file.
