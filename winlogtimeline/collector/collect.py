@@ -1,5 +1,8 @@
 import Evtx.Evtx as evtx
 from threading import Thread
+import xmltodict
+from time import time
+import pyevtx
 
 
 # Note: It may be useful to take config out of this whole equation. Config could store the default filter configuration,
@@ -7,59 +10,33 @@ from threading import Thread
 def import_log(log_file, project, config):
     """
     Main routine to import an event log file.
-    :param log_file: A path to an event log file.
+    :param log_file_param: A path to an event log file.
     :param project: A project instance.
     :param config: A config dictionary.
     :return: None
     """
-    with evtx.Evtx(log_file) as log:  # Open the event logs.
-        evtx_records = collect_records(log)  # Get existing records.
 
-    return "Finished openning the event logs file."
+    log = pyevtx.file()
+    log.open(log_file)
 
-    # Pull the logs from the event log file
-    # event_records = collect_records(event_file) + collect_deleted_records(event_file)
-    # machine_name = get_machine_name(event_file)
-    # logs = (util.logs.parse_record(record, machine_name) for record in event_records)
-    # logs = filter_logs(logs, project, config)
-    # for log in logs:
-    #    project.write_log_data(log)
+    records = collect_records(log)
+    xmls = get_xml_records(records)
 
-    # Pull verification data from the event log file
-    # file_hash = get_log_file_hash(log_file)
-    # project.write_verification_data(file_hash, log_file)
-
-    # Close the event log
-    # event_file.close()
+    return "Finished opening the event logs file."
 
 
 def get_xml_records(records):
     """
-    Parse the given records into an XML format.
-    :param records: list of Evtx Record objects
-    :return: list of XML representations for record objects
+    :param records: list of original record objects
+    :return: list of XML records
     """
+    start = time()
+    raw_xmls = [record.get_xml_string() for record in records]
+    stop = time()
 
-    xml_records = []  # 249.23 sec to complete. 31323 records - This was the fastest option I could achieve.
-    for record in records:
-        t = Thread(target=xml_records.append, args=(record.xml(),))
-        t.daemon = True
-        t.start()
+    print(stop - start)
 
-    return xml_records
-
-
-def get_lxml_records(records):
-    """
-    Parse the given records into an LXML format.
-    :param records: list of Evtx Record objects
-    :return: list of LXML representations for record objects
-    """
-
-    lxml_records = [record.lxml() for record in records]
-
-    return lxml_records
-
+    return raw_xmls
 
 def collect_records(event_file):
     """
@@ -67,7 +44,14 @@ def collect_records(event_file):
     :return: A list of event records in the format returned by libevtx-python.
     """
 
-    return event_file.records()
+    start = time()
+    records = [event_file.get_record(i) for i in range(event_file.get_number_of_records())]
+    stop = time()
+
+    print(stop - start)
+    print(len(records))
+
+    return records
 
 
 def collect_deleted_records(event_file):
