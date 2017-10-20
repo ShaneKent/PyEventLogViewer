@@ -1,9 +1,12 @@
+import tkinter.filedialog as filedialog
 import tkinter as tk
+
 from threading import Thread
 from winlogtimeline import util
 from winlogtimeline import collector
 
 currentProject = None
+
 
 class GUI(tk.Tk):
     def __init__(self, *args, **kwargs):
@@ -17,6 +20,21 @@ class GUI(tk.Tk):
         self.toolbar = Toolbar(self)
         self.querybar = QueryBar(self)
         self.eventsection = EventSection(self)
+
+        self.__disable__(*args, **kwargs)
+        self.protocol("WM_DELETE_WINDOW", self.__destroy__)
+
+    def __disable__(self, *args, **kwargs):
+        self.toolbar.__disable__(self, *args, **kwargs)
+        self.querybar.__disable__(self, *args, **kwargs)
+
+    def __destroy__(self, *args, **kwargs):
+        global currentProject
+
+        if (currentProject != None):
+            SaveBeforeClosing(self)
+
+        self.destroy()
 
 
 class EventSection(tk.Canvas):
@@ -47,10 +65,15 @@ class QueryBar(tk.Frame):
         self.button.pack(side=tk.LEFT)
         # --
 
+    def __disable__(self, parent, *args, **kwargs):
+        self.button.config(state=tk.DISABLED)
+        self.dropDown.config(state=tk.DISABLED)
+
 
 class StatusBar(tk.Label):
     def __init__(self, parent, *args, **kwargs):
-        self.status = tk.Label(parent, text="This is a status bar.", bd=1, relief=tk.SUNKEN, anchor=tk.W, *args,
+        self.status = tk.Label(parent, text="Notice: Create a new project or open an existing project to get started.",
+                               bd=1, relief=tk.SUNKEN, anchor=tk.W, *args,
                                **kwargs)
         self.status.pack(side=tk.BOTTOM, fill=tk.X)
 
@@ -71,6 +94,10 @@ class Toolbar(tk.Frame):
         self.formatButton.pack()
 
         self.toolbar.pack(side=tk.LEFT, fill=tk.Y)
+
+    def __disable__(self, parent, *args, **kwargs):
+        self.importButton.config(state=tk.DISABLED)
+        self.formatButton.config(state=tk.DISABLED)
 
     def importFunction(self, parent):
         def callback():
@@ -99,16 +126,57 @@ class Menubar(tk.Frame):
 
         self.fileMenu.add_command(label="New Project", command=lambda: self.newProjectFunction(parent))
         self.fileMenu.add_command(label="Open Project", command=lambda: self.openProjectFunction(parent))
-        self.fileMenu.add_command(label="Save Project", command=lambda: self.saveProjectFunction(parent))
+        # self.fileMenu.add_command(label="Save Project", command=lambda: self.saveProjectFunction(parent))
 
     def newProjectFunction(self, parent):
-        parent.statusbar.status.config(text="'New Project' chosen from menu bar.")
+        global currentProject
+
+        if (currentProject != None):
+            SaveBeforeClosing(parent)
+
+        currentProject = util.project.Project("./")
+        parent.statusbar.status.config(text="Project created at " + currentProject.path)
+
         return
 
     def openProjectFunction(self, parent):
-        parent.statusbar.status.config(text="'Open Project' chosen from menu bar.")
+        global currentProject
+
+        if (currentProject != None):
+            SaveBeforeClosing(parent)
+
+        filename = filedialog.askopenfilename(initialdir="./", title="Open a Project File",
+                                              filetypes=(("ELV Project File", "*.elv"),))
+        currentProject = util.project.Project(filename)
+
+        parent.statusbar.status.config(text="Project opened at " + currentProject.path)
         return
 
     def saveProjectFunction(self, parent):
         parent.statusbar.status.config(text="'Save Project' chosen from menu bar.")
         return
+
+
+class SaveBeforeClosing(tk.Toplevel):
+    def __init__(self, parent):
+        tk.Toplevel.__init__(self, parent)
+
+        self.label = tk.Label(self, text="Do you want to save your project before closing it?")
+        self.label.pack()
+
+        self.buttonYes = tk.Button(self, text="Yes", command=lambda: self.save())
+        self.buttonNo = tk.Button(self, text="No", command=lambda: self.destroy())
+
+        self.buttonYes.pack()
+        self.buttonNo.pack()
+
+        self.transient(parent)
+        self.grab_set()
+        parent.wait_window(self)
+
+    def save(self):
+        global currentProject
+
+        currentProject.save()
+        currentProject = None
+        self.destroy()
