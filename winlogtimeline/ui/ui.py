@@ -6,7 +6,9 @@ from threading import Thread
 from winlogtimeline import util
 from winlogtimeline import collector
 
-currentProject = None
+import os
+
+current_project = None
 
 
 class GUI(tk.Tk):
@@ -34,15 +36,15 @@ class GUI(tk.Tk):
         self.querybar.__enable__(self, *args, **kwargs)
 
     def __destroy__(self, *args, **kwargs):
-        global currentProject
+        global current_project
 
-        if (currentProject != None):
+        if (current_project != None):
             answer = messagebox.askyesno("Save Before Close", "Would you like to save the currently opened "
                                                               "project before closing it?")
 
             if answer:
-                currentProject.save()
-                currentProject = None
+                current_project.save()
+                current_project = None
 
         self.destroy()
 
@@ -100,9 +102,9 @@ class Toolbar(tk.Frame):
         self.formatPhoto = tk.PhotoImage(file=util.data.get_package_data_path(__file__, 'icons', 'format.gif'))
 
         self.importButton = tk.Button(self.toolbar, image=self.importPhoto, width="20", height="20",
-                                      command=lambda: self.importFunction(parent))
+                                      command=lambda: self.import_function(parent))
         self.formatButton = tk.Button(self.toolbar, image=self.formatPhoto, width="20", height="20",
-                                      command=lambda: self.formatFunction(parent))
+                                      command=lambda: self.format_function(parent))
 
         self.importButton.pack()
         self.formatButton.pack()
@@ -117,7 +119,7 @@ class Toolbar(tk.Frame):
         self.importButton.config(state=tk.NORMAL)
         self.formatButton.config(state=tk.NORMAL)
 
-    def importFunction(self, parent):
+    def import_function(self, parent):
         def callback():
             parent.statusbar.status.config(text="Reading in the Event Log file named System.evtx")
             finish = collector.import_log("../tests/System.evtx", "", "")
@@ -128,7 +130,7 @@ class Toolbar(tk.Frame):
 
         return
 
-    def formatFunction(self, parent):
+    def format_function(self, parent):
         parent.statusbar.status.config(text="'Format' button pressed.")
         return
 
@@ -142,45 +144,47 @@ class Menubar(tk.Frame):
 
         self.menu.add_cascade(label="File", menu=self.fileMenu)
 
-        self.fileMenu.add_command(label="New Project", command=lambda: self.newProjectFunction(parent))
-        self.fileMenu.add_command(label="Open Project", command=lambda: self.openProjectFunction(parent))
+        self.fileMenu.add_command(label="New Project", command=lambda: self.new_project_function(parent))
+        self.fileMenu.add_command(label="Open Project", command=lambda: self.open_project_function(parent))
         # self.fileMenu.add_command(label="Save Project", command=lambda: self.saveProjectFunction(parent))
 
-    def newProjectFunction(self, parent):
-        global currentProject
+    def new_project_function(self, parent):
+        global current_project
 
-        if (currentProject != None):
+        if (current_project != None):
             answer = messagebox.askyesno("Save Before Close", "Would you like to save the currently opened "
                                                               "project before closing it?")
             if answer:
-                currentProject.save()
-                currentProject = None
+                current_project.save()
+                current_project = None
 
-        currentProject = util.project.Project("./")
-        parent.statusbar.status.config(text="Project created at " + currentProject.path)
+        project_path = os.path.join(util.data.get_appdir(), 'Projects', 'New Project')
+        current_project = util.project.Project(project_path)
+        parent.statusbar.status.config(text="Project created at " + current_project.get_path())
         parent.__enable__()
 
         return
 
-    def openProjectFunction(self, parent):
-        global currentProject
+    def open_project_function(self, parent):
+        global current_project
 
-        if (currentProject != None):
+        if current_project is not None:
             answer = messagebox.askyesno("Save Before Close", "Would you like to save the currently opened "
                                                               "project before closing it?")
 
             if answer:
-                currentProject.save()
-                currentProject = None
+                current_project.save()
+                current_project = None
 
-        filename = filedialog.askopenfilename(initialdir="./", title="Open a Project File",
+        projects_path = os.path.join(util.data.get_appdir(), 'Projects')
+        filename = filedialog.askopenfilename(initialdir=projects_path, title="Open a Project File",
                                               filetypes=(("ELV Project File", "*.elv"),))
-        currentProject = util.project.Project(filename)
-        parent.statusbar.status.config(text="Project opened at " + currentProject.path)
+        current_project = util.project.Project(filename)
+        parent.statusbar.status.config(text="Project opened at " + current_project.get_path())
         parent.__enable__()
 
         return
 
-    def saveProjectFunction(self, parent):
+    def save_project_function(self, parent):
         parent.statusbar.status.config(text="'Save Project' chosen from menu bar.")
         return
