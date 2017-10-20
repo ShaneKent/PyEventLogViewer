@@ -35,21 +35,22 @@ class Record:
         return hashlib.md5(bytes(self.__key__(),'utf-8')).hexdigest()
 
 
-def parse_record(record, machine):
-    """
-    Takes a record as returned by libevtx-python and returns a dictionary representing the relevant log fields.
-    :param record: A record object from libevtx-python.
-    :param machine: The machine that the record was pulled from.
-    :return: A dictionary containing the relevant log data.
-    """
-    pass
-
-
-def sort_logs(logs, property, ascending=True):
+def sort_logs(logs, property, descending=False):
     """
     :param logs: A list of event logs.
     :param property: The property to sort by.
-    :param ascending: Whether to sort ascending or descending.
+    :param descending: Whether to sort ascending or descending.
     :return: A sorted list of event logs.
     """
+
+    logs = sorted(logs, key=lambda x: getattr(x, property), reverse=descending)
+
     return logs
+
+def filter_logs(logs, property, keep=True):
+    """
+    :param logs: A list of event logs.
+    :param property: The property to filter by.
+    :param keep: Keep or delete records specified by property
+    :return: A list of logs that meet the filter conditions
+    """
