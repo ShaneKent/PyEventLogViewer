@@ -21,7 +21,8 @@ SCRIPT_DIR = 'bin'
 # The glob for identifying script files
 SCRIPT_GLOBS = ['*.py', '*.pyw']
 
-DEPENDENCIES = ['libevtx-python']
+DEPENDENCIES = ['libevtx-python',
+                'appdirs']
 
 """Automated argument formatting and setup call"""
 # Grab all of the packages
