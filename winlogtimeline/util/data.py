@@ -1,5 +1,7 @@
 import json
 import os
+import appdirs
+import shutil
 
 
 def get_package_data_path(file_path, *package_data_path):
@@ -19,9 +21,26 @@ def open_config():
     Helper method for accessing the config.
     :return: Returns a dictionary matching the structure of config/config.json.
     """
-    config_path = get_package_data_path(__file__, 'config', 'config.json')
+    # Get the path to the default config file
+    config_template_path = get_package_data_path(__file__, 'config', 'config.json')
+
+    # Get the path to the working config file
+    config_path = os.path.join(get_appdir(), 'config.json')
+
+    # Copy the config file to the application data directory. This allows for user edits in
+    # a non-elevated context, and allows us to keep a default version of the config.
+    if not os.path.isfile(config_path):
+        shutil.copy2(config_template_path, config_path)
 
     with open(config_path) as config_file:
         config = json.load(config_file)
 
     return config
+
+
+def get_appdir():
+    """
+    Helper method for accessing the application directory.
+    :return:
+    """
+    return appdirs.user_data_dir('PyEventLogTimeline', 'Redacted')

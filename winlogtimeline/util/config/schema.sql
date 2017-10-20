@@ -3,8 +3,6 @@
  */
 CREATE TABLE IF NOT EXISTS logs (
   timestamp_utc DATETIME NOT NULL,
-  timestamp_local DATETIME,
-  timestamp_tz INTEGER NOT NULL,
   event_id INTEGER NOT NULL,
   description TEXT,
   details TEXT,
@@ -16,6 +14,7 @@ CREATE TABLE IF NOT EXISTS logs (
   record_number INTEGER NOT NULL,
   recovered BOOLEAN NOT NULL,
   source_file_hash TEXT NOT NULL,
+  record_hash TEXT NOT NULL,
   FOREIGN KEY(source_file_hash) REFERENCES source_files(hash)
 );
 /*

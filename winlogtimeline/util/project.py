@@ -3,6 +3,7 @@ import sqlite3 as sql
 from datetime import datetime
 
 from .data import get_package_data_path
+from .logs import Record
 
 
 class Project:
@@ -29,6 +30,9 @@ class Project:
         with open(schema_file) as schema:
             self._conn.executescript(schema.read())
             self._conn.commit()
+
+        # Fetch the column names
+        self._columns = [col_info[1] for col_info in self._conn.execute('PRAGMA table_info(logs);')]
 
         # Load the project config
         self._config = None
@@ -65,21 +69,22 @@ class Project:
         # TODO: review whether the configuration file needs an open file descriptor at all times. If not, the file can
         # be opened and closed during read/save, and nothing needs to be done here apart from deleting this comment.
 
-    def write_log_data(self, log):
+    def write_log_data(self, record):
         """
         Writes log data to the project as long as it is not a duplicate.
-        :param log: The log to write, in the format returned by winlogtimeline.util.logs.parse_record.
+        :param record: A Record object.
         :return: None
         """
-        if not self.is_duplicate(log):
+        if not self.is_duplicate(record):
             query = ('INSERT INTO logs '
-                     '(timestamp_utc, timestamp_local, timestamp_tz, event_id, description, details, event_source,'
-                     ' event_log, session_id, account, computer_name, record_number, recovered, source_file_hash) '
-                     'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-            # TODO: remove test values on the next line
+                     '(timestamp_utc, event_id, description, details, event_source, event_log, session_id, account,'
+                     ' computer_name, record_number, recovered, record_hash, source_file_hash) '
+                     'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
             values = (
-                datetime.utcnow(), datetime.utcnow(), 0, 1111, 'Test', 'This is a test', 'Test Source', 'Test Log', 0,
-                'Test User', 'Computer', 0, False, '1FC1FC')
+                record.timestamp_utc, record.event_id, record.description, record.details, record.event_source,
+                record.event_log, record.session_id, record.account, record.computer_name, record.record_number,
+                record.recovered, record.record_hash, record.source_file_hash
+            )
             self._conn.execute(query, values)
 
     def write_verification_data(self, file_hash, log_file):
@@ -101,34 +106,15 @@ class Project:
         """
         :return: A list of all logs in project storage.
         """
-        keys = (
-            'timestamp_utc',
-            'timestamp_local',
-            'timestamp_tz',
-            'event_id',
-            'description',
-            'details',
-            'event_source',
-            'event_log',
-            'session_id',
-            'account',
-            'computer_name',
-            'record_number',
-            'recovered',
-            'source_file_hash'
-        )
-
-        cursor = self._conn.cursor()
         query = 'SELECT * FROM logs'
-        cursor.execute(query)
-        rows = cursor.fetchall()
+        rows = self._conn.execute(query).fetchall()
 
         # Convert the rows to an easy to use storage format. This should be changed once consensus is formed.
-        logs = [dict(zip(keys, row)) for row in rows]
+        logs = [Record(**dict(zip(self._columns, row))) for row in rows]
 
         return logs
 
-    def is_duplicate(self, log):
+    def is_duplicate(self, record):
         """
 
         :return:
