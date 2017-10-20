@@ -1,4 +1,5 @@
 import tkinter.filedialog as filedialog
+import tkinter.messagebox as messagebox
 import tkinter as tk
 
 from threading import Thread
@@ -28,11 +29,20 @@ class GUI(tk.Tk):
         self.toolbar.__disable__(self, *args, **kwargs)
         self.querybar.__disable__(self, *args, **kwargs)
 
+    def __enable__(self, *args, **kwargs):
+        self.toolbar.__enable__(self, *args, **kwargs)
+        self.querybar.__enable__(self, *args, **kwargs)
+
     def __destroy__(self, *args, **kwargs):
         global currentProject
 
         if (currentProject != None):
-            SaveBeforeClosing(self)
+            answer = messagebox.askyesno("Save Before Close", "Would you like to save the currently opened "
+                                                              "project before closing it?")
+
+            if answer:
+                currentProject.save()
+                currentProject = None
 
         self.destroy()
 
@@ -69,6 +79,10 @@ class QueryBar(tk.Frame):
         self.button.config(state=tk.DISABLED)
         self.dropDown.config(state=tk.DISABLED)
 
+    def __enable__(self, parent, *args, **kwargs):
+        self.button.config(state=tk.NORMAL)
+        self.dropDown.config(state=tk.NORMAL)
+
 
 class StatusBar(tk.Label):
     def __init__(self, parent, *args, **kwargs):
@@ -98,6 +112,10 @@ class Toolbar(tk.Frame):
     def __disable__(self, parent, *args, **kwargs):
         self.importButton.config(state=tk.DISABLED)
         self.formatButton.config(state=tk.DISABLED)
+
+    def __enable__(self, parent, *args, **kwargs):
+        self.importButton.config(state=tk.NORMAL)
+        self.formatButton.config(state=tk.NORMAL)
 
     def importFunction(self, parent):
         def callback():
@@ -132,10 +150,15 @@ class Menubar(tk.Frame):
         global currentProject
 
         if (currentProject != None):
-            SaveBeforeClosing(parent)
+            answer = messagebox.askyesno("Save Before Close", "Would you like to save the currently opened "
+                                                              "project before closing it?")
+            if answer:
+                currentProject.save()
+                currentProject = None
 
         currentProject = util.project.Project("./")
         parent.statusbar.status.config(text="Project created at " + currentProject.path)
+        parent.__enable__()
 
         return
 
@@ -143,40 +166,21 @@ class Menubar(tk.Frame):
         global currentProject
 
         if (currentProject != None):
-            SaveBeforeClosing(parent)
+            answer = messagebox.askyesno("Save Before Close", "Would you like to save the currently opened "
+                                                              "project before closing it?")
+
+            if answer:
+                currentProject.save()
+                currentProject = None
 
         filename = filedialog.askopenfilename(initialdir="./", title="Open a Project File",
                                               filetypes=(("ELV Project File", "*.elv"),))
         currentProject = util.project.Project(filename)
-
         parent.statusbar.status.config(text="Project opened at " + currentProject.path)
+        parent.__enable__()
+
         return
 
     def saveProjectFunction(self, parent):
         parent.statusbar.status.config(text="'Save Project' chosen from menu bar.")
         return
-
-
-class SaveBeforeClosing(tk.Toplevel):
-    def __init__(self, parent):
-        tk.Toplevel.__init__(self, parent)
-
-        self.label = tk.Label(self, text="Do you want to save your project before closing it?")
-        self.label.pack()
-
-        self.buttonYes = tk.Button(self, text="Yes", command=lambda: self.save())
-        self.buttonNo = tk.Button(self, text="No", command=lambda: self.destroy())
-
-        self.buttonYes.pack()
-        self.buttonNo.pack()
-
-        self.transient(parent)
-        self.grab_set()
-        parent.wait_window(self)
-
-    def save(self):
-        global currentProject
-
-        currentProject.save()
-        currentProject = None
-        self.destroy()
