@@ -7,23 +7,27 @@ from .logs import Record
 
 
 class Project:
-    def __init__(self, project_directory):
+    def __init__(self, project_file):
         """
-        :param project_directory: The path to a project directory.
+        :param project_file: The path to a .elv file.
         """
         # Create the project directory if it doesn't exist.
+        project_directory = os.path.dirname(project_file)
         if not os.path.exists(project_directory):
             os.makedirs(project_directory)
+
+        # Create the project file if it doesn't exist
+        open(project_file, 'a').close()
 
         # Set up the directory structure
         self._path = project_directory
         self._log_file = 'logs.sqlite'
         self._log_path = os.path.join(self._path, self._log_file)
-        self._config_file = 'somefile.extension'
-        self._config_path = os.path.join(self._path, self._config_file)
+        self._config_file = os.path.basename(project_file)
+        self._config_path = project_file
 
         # Create a database connection
-        self._conn = sql.connect(self._log_path)
+        self._conn = sql.connect(self._log_path, check_same_thread=False)
         schema_file = get_package_data_path(__file__, *('config/schema.sql'.split('/')))
 
         # Set up the database if not exists
@@ -82,6 +86,7 @@ class Project:
         :param record: A Record object.
         :return: None
         """
+
         if not self.is_duplicate(record):
             query = ('INSERT INTO logs '
                      '(timestamp_utc, event_id, description, details, event_source, event_log, session_id, account,'
@@ -103,11 +108,10 @@ class Project:
         """
         time = datetime.utcnow()
 
-        cursor = self._conn.cursor()
         query = 'INSERT INTO source_files (file_name, hash, import_timestamp) VALUES (?, ?, ?)'
         values = (log_file, file_hash, time)
 
-        cursor.execute(query, values)
+        self._conn.execute(query, values)
 
     def get_all_logs(self):
         """
