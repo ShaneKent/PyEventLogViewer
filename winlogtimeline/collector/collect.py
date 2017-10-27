@@ -1,51 +1,70 @@
 import xmltodict
+from xml.parsers.expat import ExpatError
 from time import time
 import pyevtx
+from winlogtimeline.util.logs import Record
+
 
 # Note: It may be useful to take config out of this whole equation. Config could store the default filter configuration,
 # and that could be copied into the project config to allow user modifications.
-def import_log(log_file, project, config):
+def import_log(log_file, project, config, status_callback):
     """
     Main routine to import an event log file.
-    :param log_file_param: A path to an event log file.
+    :param log_file: A path to an event log file.
     :param project: A project instance.
     :param config: A config dictionary.
+    :param status_callback: A function to relay status info the the GUI. Should accept status as a string.
     :return: None
     """
 
+    status_callback('Parsing file...')
     start = time()
     log = pyevtx.open(log_file)
     records = collect_records(log)  # + collect_deleted_records(log)
     xml_records = xml_convert(records)
+    i = 0
+    for record in xml_records:
+        project.write_log_data(Record(**record))
+        i += 1
     stop = time()
 
-    taken = str(stop - start).split(".")[0]
+    taken = stop - start
 
-    return "Finished opening event log file. It took " + taken + " seconds."
+    status_callback('Loaded {} records in {:0.3f} seconds.'.format(i, taken))
 
 
 def xml_convert(records):
-    xmls = []
-    for i in range(0, len(records)):
-        record = records[i]
-
+    for record in records:
         try:
-            xmls.append(xmltodict.parse(record))
-        except:
+            d = xmltodict.parse(record)
+        except ExpatError:
             record = record.replace("\x00", "")  # This can not be the best way to do this...
-            xmls.append(xmltodict.parse(record))
+            d = xmltodict.parse(record)
+        sys = d['Event']['System']
 
-    return xmls
+        yield {
+            'timestamp_utc': sys['TimeCreated']['@SystemTime'],
+            'event_id': sys['EventID'],
+            'description': '',
+            'details': '',
+            'event_source': sys['Provider']['@Name'],
+            'event_log': sys['Channel'],
+            'session_id': '',
+            'account': '',
+            'computer_name': sys['Computer'],
+            'record_number': sys['EventRecordID'],
+            'recovered': False,
+            'source_file_hash': ''
+        }
+
 
 def collect_records(event_file):
     """
     :param event_file: An event log object.
     :return: A list of event records in the format returned by libevtx-python.
     """
-
-    records = [event_file.get_record(i).xml_string for i in range(0, event_file.get_number_of_records())]
-
-    return records
+    for i in range(event_file.get_number_of_records()):
+        yield event_file.get_record(i).xml_string
 
 
 def collect_deleted_records(event_file):

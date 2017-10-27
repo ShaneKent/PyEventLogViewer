@@ -39,12 +39,17 @@ class GUI(Tk):
         global current_project
 
         if current_project is not None:
-            answer = messagebox.askyesno("Save Before Close", "Would you like to save the currently opened "
-                                                              "project before closing it?")
+            answer = messagebox.askquestion(title="Save Before Close",
+                                            message="Would you like to save the currently opened project before "
+                                                    "closing it?", type=messagebox.YESNOCANCEL)
 
-            if answer:
-                current_project.save()
+            if answer == messagebox.YES:
+                current_project.close()
                 current_project = None
+            elif answer == messagebox.NO:
+                current_project = None
+            else:
+                return
 
         self.destroy()
 
@@ -67,7 +72,7 @@ class QueryBar(Frame):
         self.variable.set("All")
 
         self.drop_down = OptionMenu(self, self.variable, "System Startup", "System Shutdown", "Time Change",
-                                   "All")
+                                    "All")
         self.drop_down.config(width="15")
         self.drop_down.pack(side=LEFT)
 
@@ -121,18 +126,23 @@ class Toolbar(Frame):
         self.format_button.config(state=NORMAL)
 
     def import_function(self):
-        filename = filedialog.askopenfilename(title="Open a Project File",
-                                              filetypes=(("Windows Event Log File", "*.evtx"),))
+        global current_project
+        file_path = filedialog.askopenfilename(title="Open a Project File",
+                                               filetypes=(("Windows Event Log File", "*.evtx"),))
 
-        if len(filename) == 0:
+        if len(file_path) == 0:
             return
 
-        filename = os.path.abspath(filename)
+        file_path = os.path.abspath(file_path)
 
         def callback():
-            self.master.status_bar.status.config(text="Reading in the Event Log file named System.evtx")
-            finish = collector.import_log(filename, "", "")
-            self.master.status_bar.status.config(text=finish)
+            text = '{file}: {status}'.format(file=os.path.basename(file_path), status='{status}')
+
+            def update_progress(status):
+                self.master.status_bar.status.config(text=text.format(status=status))
+
+            update_progress('Waiting to start')
+            collector.import_log(file_path, current_project, "", update_progress)
 
         t = Thread(target=callback)
         t.start()
@@ -161,13 +171,19 @@ class MenuBar(Menu):
         global current_project
 
         if current_project is not None:
-            answer = messagebox.askyesno("Save Before Close", "Would you like to save the currently opened "
-                                                              "project before closing it?")
-            if answer:
-                current_project.save()
-                current_project = None
+            answer = messagebox.askquestion(title="Save Before Close",
+                                            message="Would you like to save the currently opened project before "
+                                                    "closing it?", type=messagebox.YESNOCANCEL)
 
-        project_path = os.path.join(util.data.get_appdir(), 'Projects', 'New Project')
+            if answer == messagebox.YES:
+                current_project.close()
+                current_project = None
+            elif answer == messagebox.NO:
+                current_project = None
+            else:
+                return
+
+        project_path = os.path.join(util.data.get_appdir(), 'Projects', 'New Project', 'New Project.elv')
         current_project = util.project.Project(project_path)
         self.master.status_bar.status.config(text="Project created at " + current_project.get_path())
         self.master.__enable__()
@@ -178,12 +194,17 @@ class MenuBar(Menu):
         global current_project
 
         if current_project is not None:
-            answer = messagebox.askyesno("Save Before Close", "Would you like to save the currently opened "
-                                                              "project before closing it?")
+            answer = messagebox.askquestion(title="Save Before Close",
+                                            message="Would you like to save the currently opened project before "
+                                                    "closing it?", type=messagebox.YESNOCANCEL)
 
-            if answer:
-                current_project.save()
+            if answer == messagebox.YES:
+                current_project.close()
                 current_project = None
+            elif answer == messagebox.NO:
+                current_project = None
+            else:
+                return
 
         projects_path = os.path.join(util.data.get_appdir(), 'Projects')
         filename = filedialog.askopenfilename(initialdir=projects_path, title="Open a Project File",
@@ -198,5 +219,7 @@ class MenuBar(Menu):
         return
 
     def save_project_function(self):
-        self.master.status_bar.status.config(text="'Save Project' chosen from menu bar.")
+        global current_project
+        current_project.save()
+        self.master.status_bar.status.config(text="Project saved!")
         return
