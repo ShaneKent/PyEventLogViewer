@@ -15,7 +15,7 @@ class GUI(Tk):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.winfo_toplevel().title("PyEventLogViewer")
+        self.winfo_toplevel().title('PyEventLogViewer')
         self.minsize(width=800, height=600)
 
         self.menu_bar = MenuBar(self, tearoff=False)
@@ -25,7 +25,7 @@ class GUI(Tk):
         self.event_section = EventSection(self)
 
         self.__disable__()
-        self.protocol("WM_DELETE_WINDOW", self.__destroy__)
+        self.protocol('WM_DELETE_WINDOW', self.__destroy__)
 
     def __disable__(self):
         self.toolbar.__disable__()
@@ -39,9 +39,9 @@ class GUI(Tk):
         global current_project
 
         if current_project is not None:
-            answer = messagebox.askquestion(title="Save Before Close",
-                                            message="Would you like to save the currently opened project before "
-                                                    "closing it?", type=messagebox.YESNOCANCEL)
+            answer = messagebox.askquestion(title='Save Before Close',
+                                            message='Would you like to save the currently opened project before '
+                                                    'closing it?', type=messagebox.YESNOCANCEL)
 
             if answer == messagebox.YES:
                 current_project.close()
@@ -65,20 +65,20 @@ class QueryBar(Frame):
         super().__init__(parent, **kwargs)
         self.pack(side=TOP, fill=X)
 
-        self.label = Label(self, text="Show Events:", anchor=W, **kwargs)
+        self.label = Label(self, text='Show Events:', anchor=W, **kwargs)
         self.label.pack(side=LEFT)
 
         self.variable = StringVar(self)
-        self.variable.set("All")
+        self.variable.set('All')
 
-        self.drop_down = OptionMenu(self, self.variable, "System Startup", "System Shutdown", "Time Change",
-                                    "All")
-        self.drop_down.config(width="15")
+        self.drop_down = OptionMenu(self, self.variable, 'System Startup', 'System Shutdown', 'Time Change',
+                                    'All')
+        self.drop_down.config(width='15')
         self.drop_down.pack(side=LEFT)
 
         # -- REMOVE WHEN NOT NEEDED. Only for prototyping reasons.
-        self.button = Button(self, text="Query", command=lambda: parent.status_bar.status.config(
-            text="Queried for " + self.variable.get() + " events."))
+        self.button = Button(self, text='Query', command=lambda: parent.status_bar.status.config(
+            text='Queried for ' + self.variable.get() + ' events.'))
         self.button.pack(side=LEFT)
         # --
 
@@ -94,7 +94,7 @@ class QueryBar(Frame):
 class StatusBar(Label):
     def __init__(self, parent, *args, **kwargs):
         super().__init__(parent)
-        self.status = Label(parent, text="Notice: Create a new project or open an existing project to get started.",
+        self.status = Label(parent, text='Notice: Create a new project or open an existing project to get started.',
                             borderwidth=1, relief=SUNKEN, anchor=W, *args,
                             **kwargs)
         self.status.pack(side=BOTTOM, fill=X)
@@ -107,9 +107,9 @@ class Toolbar(Frame):
         self.import_photo = PhotoImage(file=util.data.get_package_data_path(__file__, 'icons', 'import.gif'))
         self.format_photo = PhotoImage(file=util.data.get_package_data_path(__file__, 'icons', 'format.gif'))
 
-        self.import_button = Button(self, image=self.import_photo, width="20",
+        self.import_button = Button(self, image=self.import_photo, width='20',
                                     command=lambda: self.import_function())
-        self.format_button = Button(self, image=self.format_photo, width="20",
+        self.format_button = Button(self, image=self.format_photo, width='20',
                                     command=lambda: self.format_function())
 
         self.import_button.pack()
@@ -127,8 +127,8 @@ class Toolbar(Frame):
 
     def import_function(self):
         global current_project
-        file_path = filedialog.askopenfilename(title="Open a Project File",
-                                               filetypes=(("Windows Event Log File", "*.evtx"),))
+        file_path = filedialog.askopenfilename(title='Open a Project File',
+                                               filetypes=(('Windows Event Log File', '*.evtx'),))
 
         if len(file_path) == 0:
             return
@@ -142,7 +142,7 @@ class Toolbar(Frame):
                 self.master.status_bar.status.config(text=text.format(status=status))
 
             update_progress('Waiting to start')
-            collector.import_log(file_path, current_project, "", update_progress)
+            collector.import_log(file_path, current_project, '', update_progress)
 
         t = Thread(target=callback)
         t.start()
@@ -150,7 +150,7 @@ class Toolbar(Frame):
         return
 
     def format_function(self):
-        self.master.status_bar.status.config(text="'Format' button pressed.")
+        self.master.status_bar.status.config(text='"Format" button pressed.')
         return
 
 
@@ -161,19 +161,32 @@ class MenuBar(Menu):
 
         self.file_menu = Menu(self, **kwargs)
 
-        self.add_cascade(label="File", menu=self.file_menu)
+        # File
+        self.add_cascade(label='File', menu=self.file_menu, underline=0)
 
-        self.file_menu.add_command(label="New Project", command=lambda: self.new_project_function())
-        self.file_menu.add_command(label="Open Project", command=lambda: self.open_project_function())
-        # self.fileMenu.add_command(label="Save Project", command=lambda: self.saveProjectFunction())
+        # File -> New Project (Ctrl+N)
+        self.file_menu.add_command(label='New', command=self.new_project_function, underline=0,
+                                   accelerator='Ctrl+N')
+        parent.bind_all('<Control-n>', self.new_project_function)
+
+        # File -> Open... (Ctrl+O)
+        self.file_menu.add_command(label='Open...', command=self.open_project_function, underline=0,
+                                   accelerator='Ctrl+O')
+        parent.bind_all('<Control-o>', self.open_project_function)
+
+        # File -> Save
+        self.file_menu.add_command(label='Save', command=self.save_project_function, underline=0,
+                                   accelerator='Ctrl+S')
+        parent.bind_all('<Control-s>', self.open_project_function)
+        # self.fileMenu.add_command(label='Save Project', command=lambda: self.saveProjectFunction())
 
     def new_project_function(self):
         global current_project
 
         if current_project is not None:
-            answer = messagebox.askquestion(title="Save Before Close",
-                                            message="Would you like to save the currently opened project before "
-                                                    "closing it?", type=messagebox.YESNOCANCEL)
+            answer = messagebox.askquestion(title='Save Before Close',
+                                            message='Would you like to save the currently opened project before '
+                                                    'closing it?', type=messagebox.YESNOCANCEL)
 
             if answer == messagebox.YES:
                 current_project.close()
@@ -185,7 +198,7 @@ class MenuBar(Menu):
 
         project_path = os.path.join(util.data.get_appdir(), 'Projects', 'New Project', 'New Project.elv')
         current_project = util.project.Project(project_path)
-        self.master.status_bar.status.config(text="Project created at " + current_project.get_path())
+        self.master.status_bar.status.config(text='Project created at ' + current_project.get_path())
         self.master.__enable__()
 
         return
@@ -194,9 +207,9 @@ class MenuBar(Menu):
         global current_project
 
         if current_project is not None:
-            answer = messagebox.askquestion(title="Save Before Close",
-                                            message="Would you like to save the currently opened project before "
-                                                    "closing it?", type=messagebox.YESNOCANCEL)
+            answer = messagebox.askquestion(title='Save Before Close',
+                                            message='Would you like to save the currently opened project before '
+                                                    'closing it?', type=messagebox.YESNOCANCEL)
 
             if answer == messagebox.YES:
                 current_project.close()
@@ -207,13 +220,13 @@ class MenuBar(Menu):
                 return
 
         projects_path = os.path.join(util.data.get_appdir(), 'Projects')
-        filename = filedialog.askopenfilename(initialdir=projects_path, title="Open a Project File",
-                                              filetypes=(("ELV Project File", "*.elv"),))
+        filename = filedialog.askopenfilename(initialdir=projects_path, title='Open a Project File',
+                                              filetypes=(('ELV Project File', '*.elv'),))
         if len(filename) == 0:
             return
 
         current_project = util.project.Project(filename)
-        self.master.status_bar.status.config(text="Project opened at " + current_project.get_path())
+        self.master.status_bar.status.config(text='Project opened at ' + current_project.get_path())
         self.master.__enable__()
 
         return
@@ -221,5 +234,5 @@ class MenuBar(Menu):
     def save_project_function(self):
         global current_project
         current_project.save()
-        self.master.status_bar.status.config(text="Project saved!")
+        self.master.status_bar.status.config(text='Project saved!')
         return
