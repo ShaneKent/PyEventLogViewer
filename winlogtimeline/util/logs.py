@@ -3,6 +3,7 @@ import hashlib
 
 class Record:
     def __init__(self, **kwargs):
+        # TODO: Remove/limit string casts once log imports are standardized/filtered properly.
         self.timestamp_utc = kwargs['timestamp_utc']
         self.event_id = kwargs['event_id']
         self.description = kwargs['description']
@@ -17,13 +18,22 @@ class Record:
         self.source_file_hash = kwargs['source_file_hash']
         self.record_hash = self.__hash__()
 
-    # get unique id function that returns unique id for each log
-    # __hash__ function (override)
-    # timestamp_utc, event_id, description, computer name, event source, event log
+    def get_tuple(self):
+        return (
+            self.timestamp_utc, self.event_id, self.description, self.details, self.event_source, self.event_log,
+            self.session_id, self.account, self.computer_name, self.record_number, self.recovered, self.source_file_hash
+        )
+
+    def get_headers(self):
+        return (
+            'Timestamp (UTC)', 'Event ID', 'Description', 'Details', 'Event Source', 'Event Log', 'Session ID',
+            'Account', 'Computer Name', 'Record Number', 'Recovered', 'Source File Hash'
+        )
+
     def __key__(self):
         key_string = ""
         key_string += self.timestamp_utc
-        key_string += self.event_id
+        key_string += str(self.event_id)
         key_string += self.description
         key_string += self.computer_name
         key_string += self.event_source
@@ -45,6 +55,7 @@ def sort_logs(logs, property, descending=False):
     logs = sorted(logs, key=lambda x: getattr(x, property), reverse=descending)
 
     return logs
+
 
 def filter_logs(logs, property, keep=True):
     """

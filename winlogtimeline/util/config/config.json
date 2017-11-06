@@ -1,3 +1,28 @@
 {
-  "key": "value"
+  "events": [
+    {
+      "event_id": "1",
+      "color": "#0000FF"
+    },
+    {
+      "event_id": "12",
+      "color": "#00FF00"
+    },
+    {
+      "event_id": "13",
+      "color": "#FF0000"
+    },
+    {
+      "event_id": "41",
+      "color": "#FF00FF"
+    },
+    {
+      "event_id": "42",
+      "color": "#FFFF00"
+    },
+    {
+      "event_id": "104",
+      "color": "#00FFFF"
+    }
+  ]
 }
