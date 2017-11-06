@@ -1,6 +1,3 @@
-from pprint import PrettyPrinter
-
-
 def parser(raw, record):
     # record["description"]
     # record["details"]
