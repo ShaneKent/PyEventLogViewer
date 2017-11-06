@@ -3,8 +3,6 @@ from xml.parsers.expat import ExpatError
 from time import time
 import pyevtx
 from winlogtimeline.util.logs import Record
-from dateutil.parser import parse
-from dateutil.tz import tzlocal
 from .parser import parser
 
 from hashlib import md5
@@ -27,15 +25,14 @@ def import_log(log_file, project, config, status_callback):
     start = time()
     with open(log_file, "rb") as file:
         file_hash = md5(file.read()).hexdigest()
-        print(file_hash)
 
     log = pyevtx.open(log_file)
     records = collect_records(log)  # + collect_deleted_records(log)
     xml_records = xml_convert(records, file_hash)
 
+    status_callback('Records converted to XML format. Parsing for important info now...')
     i = 0
     for record in xml_records:
-        print(record)
         project.write_log_data(Record(**record))
         i += 1
 
@@ -57,7 +54,7 @@ def xml_convert(records, file_hash, recovered=True):
         sys = d['Event']['System']
 
         dictionary = parser(record, {
-            'timestamp_utc': str(parse(sys['TimeCreated']['@SystemTime'])),
+            'timestamp_utc': sys['TimeCreated']['@SystemTime'],
             'event_id': sys['EventID'],
             'description': '',
             'details': '',

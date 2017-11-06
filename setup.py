@@ -24,8 +24,7 @@ SCRIPT_GLOBS = ['*.py', '*.pyw']
 DEPENDENCIES = ['libevtx-python',
                 'appdirs',
                 'xmltodict',
-                'pytest',
-                'python-dateutil']
+                'pytest']
 
 """Automated argument formatting and setup call"""
 # Grab all of the packages
