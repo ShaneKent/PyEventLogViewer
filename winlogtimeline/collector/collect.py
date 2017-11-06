@@ -3,6 +3,11 @@ from xml.parsers.expat import ExpatError
 from time import time
 import pyevtx
 from winlogtimeline.util.logs import Record
+from dateutil.parser import parse
+from dateutil.tz import tzlocal
+from .parser import parser
+
+from hashlib import md5
 
 
 # Note: It may be useful to take config out of this whole equation. Config could store the default filter configuration,
@@ -18,14 +23,22 @@ def import_log(log_file, project, config, status_callback):
     """
 
     status_callback('Parsing file...')
+
     start = time()
+    with open(log_file, "rb") as file:
+        file_hash = md5(file.read()).hexdigest()
+        print(file_hash)
+
     log = pyevtx.open(log_file)
     records = collect_records(log)  # + collect_deleted_records(log)
-    xml_records = xml_convert(records)
+    xml_records = xml_convert(records, file_hash)
+
     i = 0
     for record in xml_records:
+        print(record)
         project.write_log_data(Record(**record))
         i += 1
+
     stop = time()
 
     taken = stop - start
@@ -33,17 +46,18 @@ def import_log(log_file, project, config, status_callback):
     status_callback('Loaded {} records in {:0.3f} seconds.'.format(i, taken))
 
 
-def xml_convert(records):
+def xml_convert(records, file_hash, recovered=True):
     for record in records:
         try:
             d = xmltodict.parse(record)
         except ExpatError:
             record = record.replace("\x00", "")  # This can not be the best way to do this...
             d = xmltodict.parse(record)
+
         sys = d['Event']['System']
 
-        yield {
-            'timestamp_utc': sys['TimeCreated']['@SystemTime'],
+        dictionary = parser(record, {
+            'timestamp_utc': str(parse(sys['TimeCreated']['@SystemTime'])),
             'event_id': sys['EventID'],
             'description': '',
             'details': '',
@@ -53,9 +67,12 @@ def xml_convert(records):
             'account': '',
             'computer_name': sys['Computer'],
             'record_number': sys['EventRecordID'],
-            'recovered': False,
-            'source_file_hash': ''
-        }
+            'recovered': recovered,
+            'source_file_hash': file_hash
+        })
+
+        if dictionary != None:
+            yield dictionary
 
 
 def collect_records(event_file):
