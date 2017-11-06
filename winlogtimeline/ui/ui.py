@@ -1,5 +1,6 @@
 from tkinter import *
 from tkinter import messagebox, filedialog
+from tkinter import font
 from tkinter.ttk import *
 
 from threading import Thread
@@ -18,14 +19,26 @@ class GUI(Tk):
         self.winfo_toplevel().title('PyEventLogViewer')
         self.minsize(width=800, height=600)
 
+        self.program_config = util.data.open_config()
+
         self.menu_bar = MenuBar(self, tearoff=False)
         self.status_bar = StatusBar(self)
         self.toolbar = Toolbar(self)
         self.query_bar = QueryBar(self)
-        self.event_section = EventSection(self)
 
         self.__disable__()
         self.protocol('WM_DELETE_WINDOW', self.__destroy__)
+
+    def refresh_timeline(self):
+        records = current_project.get_all_logs()
+        if len(records) > 0:
+            headers = records[0].get_headers()
+            self.create_new_timeline(headers, [record.get_tuple() for record in records])
+
+    def create_new_timeline(self, headers, data):
+        if hasattr(self, 'event_section') and self.event_section is not None:
+            self.event_section.pack_forget()
+        return EventSection(self, headers, data)
 
     def __disable__(self):
         self.toolbar.__disable__()
@@ -35,7 +48,7 @@ class GUI(Tk):
         self.toolbar.__enable__()
         self.query_bar.__enable__()
 
-    def __destroy__(self, *args, **kwargs):
+    def __destroy__(self):
         global current_project
 
         if current_project is not None:
@@ -55,9 +68,52 @@ class GUI(Tk):
 
 
 class EventSection(Frame):
-    def __init__(self, parent, **kwargs):
+    def __init__(self, parent, headers, data, **kwargs):
+        # Set up the frame
         super().__init__(parent, **kwargs)
-        self.pack(fill=BOTH)
+        self.headers = headers
+        self.pack(fill='both', expand=True)
+        # Treeview
+        self.tree = Treeview(columns=self.headers, show='headings')
+        # Scrollbars
+        vsb = Scrollbar(orient='vertical', command=self.tree.yview)
+        hsb = Scrollbar(orient='horizontal', command=self.tree.xview)
+        self.tree.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
+        self.tree.grid(column=0, row=0, sticky='nsew', in_=self)
+        vsb.grid(column=1, row=0, sticky='ns', in_=self)
+        hsb.grid(column=0, row=1, sticky='ew', in_=self)
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_rowconfigure(0, weight=1)
+
+        # Set up the columns
+        for col in self.headers:
+            self.tree.heading(col, text=col.title(), command=lambda _col=col: self.sort_column(_col, False))
+            # Base column size
+            self.tree.column(col, width=font.Font().measure(col.title()))
+
+        # Insert the values
+        for val in data:
+            # TODO: Change the tags to use event source and event id instead of just event id
+            self.tree.insert('', 'end', values=val, tags=str(val[1]))
+
+            # Adjust column widths if necessary
+            for i, v in enumerate(val):
+                width = font.Font().measure(v)
+                if self.tree.column(self.headers[i], width=None) < width:
+                    self.tree.column(self.headers[i], width=width)
+
+        # Load the tags from the config
+        for event in self.master.program_config['events']:
+            self.tree.tag_configure(event['event_id'], background=event['color'])
+
+    def sort_column(self, col, reverse):
+        l = [(self.tree.set(k, col), k) for k in self.tree.get_children('')]
+        l.sort(reverse=reverse)
+
+        for index, (val, k) in enumerate(l):
+            self.tree.move(k, '', index)
+
+        self.tree.heading(col, command=lambda _col=col: self.sort_column(_col, not reverse))
 
 
 class QueryBar(Frame):
@@ -135,7 +191,7 @@ class Toolbar(Frame):
 
         file_path = os.path.abspath(file_path)
 
-        def callback():
+        def callback(self=self):
             text = '{file}: {status}'.format(file=os.path.basename(file_path), status='{status}')
 
             def update_progress(status):
@@ -143,6 +199,8 @@ class Toolbar(Frame):
 
             update_progress('Waiting to start')
             collector.import_log(file_path, current_project, '', update_progress)
+
+            self.master.refresh_timeline()
 
         t = Thread(target=callback)
         t.start()
@@ -180,7 +238,7 @@ class MenuBar(Menu):
         parent.bind_all('<Control-s>', self.open_project_function)
         # self.fileMenu.add_command(label='Save Project', command=lambda: self.saveProjectFunction())
 
-    def new_project_function(self):
+    def new_project_function(self, event=None):
         global current_project
 
         if current_project is not None:
@@ -201,9 +259,15 @@ class MenuBar(Menu):
         self.master.status_bar.status.config(text='Project created at ' + current_project.get_path())
         self.master.__enable__()
 
+        # Set up the timeline
+        records = current_project.get_all_logs()
+        if len(records) > 0:
+            headers = records[0].get_headers()
+            self.master.create_new_timeline(headers, [record.get_tuple() for record in records])
+
         return
 
-    def open_project_function(self):
+    def open_project_function(self, event=None):
         global current_project
 
         if current_project is not None:
@@ -229,9 +293,11 @@ class MenuBar(Menu):
         self.master.status_bar.status.config(text='Project opened at ' + current_project.get_path())
         self.master.__enable__()
 
+        self.master.refresh_timeline()
+
         return
 
-    def save_project_function(self):
+    def save_project_function(self, event=None):
         global current_project
         current_project.save()
         self.master.status_bar.status.config(text='Project saved!')
