@@ -261,10 +261,7 @@ class MenuBar(Menu):
         self.master.__enable__()
 
         # Set up the timeline
-        records = current_project.get_all_logs()
-        if len(records) > 0:
-            headers = records[0].get_headers()
-            self.master.create_new_timeline(headers, [record.get_tuple() for record in records])
+        self.master.refresh_timeline()
 
         return
 
