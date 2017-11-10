@@ -72,6 +72,7 @@ class GUI(Tk):
         def callback(h=headers, r=records):
             # Disable all timeline interaction buttons to prevent a timeline duplication bug
             self.__disable__()
+            self.status_bar.status.config(text='Loading records...')
 
             # Get all records if they weren't provided
             if r is None:
@@ -86,9 +87,11 @@ class GUI(Tk):
             if self.event_section is not None:
                 self.event_section.pack_forget()
 
+            self.status_bar.status.config(text='Rendering timeline...')
             # Create the new timeline
             self.event_section = EventSection(self, h, r)
 
+            self.status_bar.status.config(text='')
             # Enable all timeline interaction buttons
             self.__enable__()
 
@@ -116,6 +119,31 @@ class EventSection(Frame):
         self.pack(fill='both', expand=True)
         # Treeview
         self.tree = Treeview(columns=self.headers, show='headings')
+
+        col_width = {header: font.Font().measure(header) for header in headers}
+
+        # Determine the column widths
+        for row in data:
+            for i, v in enumerate(row):
+                width = font.Font().measure(v)
+                if width > col_width[self.headers[i]]:
+                    col_width[self.headers[i]] = width
+
+        # Set up the columns
+        for col in self.headers:
+            print(col)
+            self.tree.heading(col, text=col.title(), command=lambda _col=col: self.sort_column(_col, False))
+            self.tree.column(col, width=col_width[col])
+
+        # Load the tags from the config
+        for event in self.master.program_config['events']:
+            self.tree.tag_configure(event['event_id'], background=event['color'])
+
+        # Insert the data
+        for row in data:
+            # TODO: Change the tags to use event source and event id instead of just event id
+            self.tree.insert('', 'end', values=row, tags=str(row[1]))
+
         # Scrollbars
         vsb = Scrollbar(orient='vertical', command=self.tree.yview)
         hsb = Scrollbar(orient='horizontal', command=self.tree.xview)
@@ -125,28 +153,6 @@ class EventSection(Frame):
         hsb.grid(column=0, row=1, sticky='ew', in_=self)
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=1)
-
-        # Set up the columns
-        for col in self.headers:
-            self.tree.heading(col, text=col.title(), command=lambda _col=col: self.sort_column(_col, False))
-            # Base column size
-            self.tree.column(col, width=font.Font().measure(col.title()))
-
-        # Insert the values
-        for val in data:
-            # TODO: Change the tags to use event source and event id instead of just event id
-            self.tree.insert('', 'end', values=val, tags=str(val[1]))
-
-            # Adjust column widths if necessary
-            # TODO: See if this can be sped up
-            for i, v in enumerate(val):
-                width = font.Font().measure(v)
-                if self.tree.column(self.headers[i], width=None) < width:
-                    self.tree.column(self.headers[i], width=width)
-
-        # Load the tags from the config
-        for event in self.master.program_config['events']:
-            self.tree.tag_configure(event['event_id'], background=event['color'])
 
     def sort_column(self, col, reverse):
         l = [(self.tree.set(k, col), k) for k in self.tree.get_children('')]
