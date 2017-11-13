@@ -131,7 +131,6 @@ class EventSection(Frame):
 
         # Set up the columns
         for col in self.headers:
-            print(col)
             self.tree.heading(col, text=col.title(), command=lambda _col=col: self.sort_column(_col, False))
             self.tree.column(col, width=col_width[col])
 
