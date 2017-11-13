@@ -109,6 +109,17 @@ def filter_logs(logs, project, config):
     :param config: A config dictionary.
     :return: A list of logs that satisfy the filters specified in the configuration.
     """
+    config = [('event_id', '=', 5061)]
+
+    query = 'SELECT * FROM logs WHERE '
+    for constraint in config:
+        query += '{} {} {} AND '.format(*constraint)
+    query = query[:-5]
+
+    cur = project._conn.execute(query)
+
+    logs = cur.fetchall()
+
     return logs
 
 

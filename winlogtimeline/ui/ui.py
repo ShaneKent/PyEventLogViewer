@@ -209,8 +209,8 @@ class QueryBar(Frame):
         self.drop_down.pack(side=LEFT)
 
         # -- REMOVE WHEN NOT NEEDED. Only for prototyping reasons.
-        self.button = Button(self, text='Query', command=lambda: parent.status_bar.status.config(
-            text='Queried for ' + self.variable.get() + ' events.'))
+
+        self.button = Button(self, text="Query", command=lambda: collector.filter_logs(None, None, None))
         self.button.pack(side=LEFT)
         # --
 
