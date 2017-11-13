@@ -9,8 +9,6 @@ from winlogtimeline import collector
 
 import os
 
-current_project = None
-
 
 class GUI(Tk):
     def __init__(self, *args, **kwargs):
@@ -20,6 +18,7 @@ class GUI(Tk):
         self.minsize(width=800, height=600)
 
         self.program_config = util.data.open_config()
+        self.current_project = None
 
         self.menu_bar = MenuBar(self, tearoff=False)
         self.status_bar = StatusBar(self)
@@ -30,16 +29,74 @@ class GUI(Tk):
         self.__disable__()
         self.protocol('WM_DELETE_WINDOW', self.__destroy__)
 
-    def refresh_timeline(self):
-        records = current_project.get_all_logs()
-        if len(records) > 0:
-            headers = records[0].get_headers()
-            self.event_section = self.create_new_timeline(headers, [record.get_tuple() for record in records])
+    def open_project(self, project_path):
+        """
+        Opens a project. This will create it if it doesn't already exist.
+        :param project_path: The path to the project elv file.
+        :return:
+        """
+        self.current_project = util.project.Project(project_path)
+        self.create_new_timeline()
+        self.__enable__()
 
-    def create_new_timeline(self, headers, data):
+    def close_project(self):
+        """
+        Prompts the user to save the project and then closes it.
+        :return:
+        """
+        if self.current_project is not None:
+            answer = messagebox.askquestion(title='Save Before Close',
+                                            message='Would you like to save the currently opened project before '
+                                                    'closing it?', type=messagebox.YESNOCANCEL)
+
+            if answer == messagebox.YES:
+                self.current_project.close()
+                self.current_project = None
+            elif answer == messagebox.NO:
+                self.current_project = None
+            else:
+                return
+
         if self.event_section is not None:
             self.event_section.pack_forget()
-        return EventSection(self, headers, data)
+            self.event_section = None
+
+    def create_new_timeline(self, headers=None, records=None):
+        """
+        Function for creating/updating the event section.
+        :param headers: A tuple containing the column titles. These should be in the same order as the values in
+        records.
+        :param records: A list of tuples containing the record values.
+        :return:
+        """
+        def callback(h=headers, r=records):
+            # Disable all timeline interaction buttons to prevent a timeline duplication bug
+            self.__disable__()
+            self.status_bar.status.config(text='Loading records...')
+
+            # Get all records if they weren't provided
+            if r is None:
+                r = self.current_project.get_all_logs()
+                if len(r) == 0:
+                    self.__enable__()
+                    return
+                h = r[0].get_headers()
+                r = [record.get_tuple() for record in r]
+
+            # Delete the old timeline if it exists
+            if self.event_section is not None:
+                self.event_section.pack_forget()
+
+            self.status_bar.status.config(text='Rendering timeline...')
+            # Create the new timeline
+            self.event_section = EventSection(self, h, r)
+
+            self.status_bar.status.config(text='')
+            # Enable all timeline interaction buttons
+            self.__enable__()
+
+        t = Thread(target=callback)
+        t.start()
 
     def __disable__(self):
         self.toolbar.__disable__()
@@ -50,21 +107,7 @@ class GUI(Tk):
         self.query_bar.__enable__()
 
     def __destroy__(self):
-        global current_project
-
-        if current_project is not None:
-            answer = messagebox.askquestion(title='Save Before Close',
-                                            message='Would you like to save the currently opened project before '
-                                                    'closing it?', type=messagebox.YESNOCANCEL)
-
-            if answer == messagebox.YES:
-                current_project.close()
-                current_project = None
-            elif answer == messagebox.NO:
-                current_project = None
-            else:
-                return
-
+        self.close_project()
         self.destroy()
 
 
@@ -76,6 +119,30 @@ class EventSection(Frame):
         self.pack(fill='both', expand=True)
         # Treeview
         self.tree = Treeview(columns=self.headers, show='headings')
+
+        col_width = {header: font.Font().measure(header) for header in headers}
+
+        # Determine the column widths
+        for row in data:
+            for i, v in enumerate(row):
+                width = font.Font().measure(v)
+                if width > col_width[self.headers[i]]:
+                    col_width[self.headers[i]] = width
+
+        # Set up the columns
+        for col in self.headers:
+            self.tree.heading(col, text=col.title(), command=lambda _col=col: self.sort_column(_col, False))
+            self.tree.column(col, width=col_width[col])
+
+        # Load the tags from the config
+        for event in self.master.program_config['events']:
+            self.tree.tag_configure(event['event_id'], background=event['color'])
+
+        # Insert the data
+        for row in data:
+            # TODO: Change the tags to use event source and event id instead of just event id
+            self.tree.insert('', 'end', values=row, tags=str(row[1]))
+
         # Scrollbars
         vsb = Scrollbar(orient='vertical', command=self.tree.yview)
         hsb = Scrollbar(orient='horizontal', command=self.tree.xview)
@@ -85,27 +152,6 @@ class EventSection(Frame):
         hsb.grid(column=0, row=1, sticky='ew', in_=self)
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=1)
-
-        # Set up the columns
-        for col in self.headers:
-            self.tree.heading(col, text=col.title(), command=lambda _col=col: self.sort_column(_col, False))
-            # Base column size
-            self.tree.column(col, width=font.Font().measure(col.title()))
-
-        # Insert the values
-        for val in data:
-            # TODO: Change the tags to use event source and event id instead of just event id
-            self.tree.insert('', 'end', values=val, tags=str(val[1]))
-
-            # Adjust column widths if necessary
-            for i, v in enumerate(val):
-                width = font.Font().measure(v)
-                if self.tree.column(self.headers[i], width=None) < width:
-                    self.tree.column(self.headers[i], width=width)
-
-        # Load the tags from the config
-        for event in self.master.program_config['events']:
-            self.tree.tag_configure(event['event_id'], background=event['color'])
 
     def sort_column(self, col, reverse):
         l = [(self.tree.set(k, col), k) for k in self.tree.get_children('')]
@@ -183,8 +229,7 @@ class Toolbar(Frame):
         self.format_button.config(state=NORMAL)
 
     def import_function(self):
-        global current_project
-        file_path = filedialog.askopenfilename(title='Open a Project File',
+        file_path = filedialog.askopenfilename(title='Open an event log file',
                                                filetypes=(('Windows Event Log File', '*.evtx'),))
 
         if len(file_path) == 0:
@@ -192,16 +237,16 @@ class Toolbar(Frame):
 
         file_path = os.path.abspath(file_path)
 
-        def callback(self=self):
+        def callback():
             text = '{file}: {status}'.format(file=os.path.basename(file_path), status='{status}')
 
             def update_progress(status):
                 self.master.status_bar.status.config(text=text.format(status=status))
 
             update_progress('Waiting to start')
-            collector.import_log(file_path, current_project, '', update_progress)
+            collector.import_log(file_path, self.master.current_project, '', update_progress)
 
-            self.master.refresh_timeline()
+            self.master.create_new_timeline()
 
         t = Thread(target=callback)
         t.start()
@@ -237,66 +282,38 @@ class MenuBar(Menu):
         self.file_menu.add_command(label='Save', command=self.save_project_function, underline=0,
                                    accelerator='Ctrl+S')
         parent.bind_all('<Control-s>', self.open_project_function)
-        # self.fileMenu.add_command(label='Save Project', command=lambda: self.saveProjectFunction())
 
     def new_project_function(self, event=None):
-        global current_project
-
-        if current_project is not None:
-            answer = messagebox.askquestion(title='Save Before Close',
-                                            message='Would you like to save the currently opened project before '
-                                                    'closing it?', type=messagebox.YESNOCANCEL)
-
-            if answer == messagebox.YES:
-                current_project.close()
-                current_project = None
-            elif answer == messagebox.NO:
-                current_project = None
-            else:
-                return
-
+        """
+        Callback function for File -> New. Closes the current project and kicks of the project creation wizard.
+        :param event: A click or key press event.
+        :return:
+        """
+        self.master.close_project()
+        # TODO: Project creation wizard
         project_path = os.path.join(util.data.get_appdir(), 'Projects', 'New Project', 'New Project.elv')
-        current_project = util.project.Project(project_path)
-        self.master.status_bar.status.config(text='Project created at ' + current_project.get_path())
-        self.master.__enable__()
-
-        # Set up the timeline
-        self.master.refresh_timeline()
-
-        return
+        self.master.open_project(project_path)
+        self.master.status_bar.status.config(text='Project created at ' + self.master.current_project.get_path())
 
     def open_project_function(self, event=None):
-        global current_project
-
-        if current_project is not None:
-            answer = messagebox.askquestion(title='Save Before Close',
-                                            message='Would you like to save the currently opened project before '
-                                                    'closing it?', type=messagebox.YESNOCANCEL)
-
-            if answer == messagebox.YES:
-                current_project.close()
-                current_project = None
-            elif answer == messagebox.NO:
-                current_project = None
-            else:
-                return
-
+        """
+        Callback function for File -> Open. Closes the current project and kicks off the open project UI.
+        :param event: A click or key press event.
+        :return:
+        """
+        self.master.close_project()
         projects_path = os.path.join(util.data.get_appdir(), 'Projects')
         filename = filedialog.askopenfilename(initialdir=projects_path, title='Open a Project File',
                                               filetypes=(('ELV Project File', '*.elv'),))
-        if len(filename) == 0:
-            return
-
-        current_project = util.project.Project(filename)
-        self.master.status_bar.status.config(text='Project opened at ' + current_project.get_path())
-        self.master.__enable__()
-
-        self.master.refresh_timeline()
-
-        return
+        if len(filename) > 0:
+            self.master.open_project(projects_path)
+            self.master.status_bar.status.config(text='Project opened at ' + self.master.current_project.get_path())
 
     def save_project_function(self, event=None):
-        global current_project
-        current_project.save()
+        """
+        Callback function for File -> Save. Saves the current project.
+        :param event: A click or key press event.
+        :return:
+        """
+        self.master.current_project.save()
         self.master.status_bar.status.config(text='Project saved!')
-        return
