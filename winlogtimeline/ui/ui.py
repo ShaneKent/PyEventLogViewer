@@ -7,6 +7,8 @@ from threading import Thread
 from winlogtimeline import util
 from winlogtimeline import collector
 
+from .new_project_wizard import NewProjectWizard
+
 import os
 
 
@@ -29,6 +31,13 @@ class GUI(Tk):
         self.__disable__()
         self.protocol('WM_DELETE_WINDOW', self.__destroy__)
 
+    def update_status_bar(self, text):
+        self.status_bar.status.config(text=text)
+
+    def create_project(self):
+        wizard = NewProjectWizard(self)
+        wizard.grab_set()
+
     def open_project(self, project_path):
         """
         Opens a project. This will create it if it doesn't already exist.
@@ -36,6 +45,10 @@ class GUI(Tk):
         :return:
         """
         self.current_project = util.project.Project(project_path)
+        # Check that the project was able to be created
+        if self.current_project.exception is not None:
+            self.current_project = None
+            return
         self.create_new_timeline()
         self.__enable__()
 
@@ -69,10 +82,11 @@ class GUI(Tk):
         :param records: A list of tuples containing the record values.
         :return:
         """
+
         def callback(h=headers, r=records):
             # Disable all timeline interaction buttons to prevent a timeline duplication bug
             self.__disable__()
-            self.status_bar.status.config(text='Loading records...')
+            self.update_status_bar('Loading records...')
 
             # Get all records if they weren't provided
             if r is None:
@@ -87,11 +101,11 @@ class GUI(Tk):
             if self.event_section is not None:
                 self.event_section.pack_forget()
 
-            self.status_bar.status.config(text='Rendering timeline...')
+            self.update_status_bar('Rendering timeline...')
             # Create the new timeline
             self.event_section = EventSection(self, h, r)
 
-            self.status_bar.status.config(text='')
+            self.update_status_bar('')
             # Enable all timeline interaction buttons
             self.__enable__()
 
@@ -240,11 +254,9 @@ class Toolbar(Frame):
         def callback():
             text = '{file}: {status}'.format(file=os.path.basename(file_path), status='{status}')
 
-            def update_progress(status):
-                self.master.status_bar.status.config(text=text.format(status=status))
-
-            update_progress('Waiting to start')
-            collector.import_log(file_path, self.master.current_project, '', update_progress)
+            self.master.update_status_bar(text.format(status='Waiting to start'))
+            collector.import_log(file_path, self.master.current_project, '',
+                                 lambda s: self.master.update_status_bar(text.format(status=s)))
 
             self.master.create_new_timeline()
 
@@ -271,17 +283,17 @@ class MenuBar(Menu):
         # File -> New Project (Ctrl+N)
         self.file_menu.add_command(label='New', command=self.new_project_function, underline=0,
                                    accelerator='Ctrl+N')
-        parent.bind_all('<Control-n>', self.new_project_function)
+        parent.bind('<Control-n>', self.new_project_function)
 
         # File -> Open... (Ctrl+O)
         self.file_menu.add_command(label='Open...', command=self.open_project_function, underline=0,
                                    accelerator='Ctrl+O')
-        parent.bind_all('<Control-o>', self.open_project_function)
+        parent.bind('<Control-o>', self.open_project_function)
 
         # File -> Save
         self.file_menu.add_command(label='Save', command=self.save_project_function, underline=0,
                                    accelerator='Ctrl+S')
-        parent.bind_all('<Control-s>', self.open_project_function)
+        parent.bind('<Control-s>', self.save_project_function)
 
     def new_project_function(self, event=None):
         """
@@ -290,10 +302,11 @@ class MenuBar(Menu):
         :return:
         """
         self.master.close_project()
-        # TODO: Project creation wizard
-        project_path = os.path.join(util.data.get_appdir(), 'Projects', 'New Project', 'New Project.elv')
-        self.master.open_project(project_path)
-        self.master.status_bar.status.config(text='Project created at ' + self.master.current_project.get_path())
+        self.master.create_project()
+        if self.master.current_project is not None:
+            self.master.update_status_bar('Project created at ' + self.master.current_project.get_path())
+        else:
+            self.master.update_status_bar('Project creation failed')
 
     def open_project_function(self, event=None):
         """
@@ -306,8 +319,11 @@ class MenuBar(Menu):
         filename = filedialog.askopenfilename(initialdir=projects_path, title='Open a Project File',
                                               filetypes=(('ELV Project File', '*.elv'),))
         if len(filename) > 0:
-            self.master.open_project(projects_path)
-            self.master.status_bar.status.config(text='Project opened at ' + self.master.current_project.get_path())
+            self.master.open_project(filename)
+            if self.master.current_project is not None:
+                self.master.update_status_bar('Project opened at ' + self.master.current_project.get_path())
+            else:
+                self.master.update_status_bar('Failed to open the project at ' + filename)
 
     def save_project_function(self, event=None):
         """
@@ -316,4 +332,4 @@ class MenuBar(Menu):
         :return:
         """
         self.master.current_project.save()
-        self.master.status_bar.status.config(text='Project saved!')
+        self.master.update_status_bar('Project saved!')

@@ -9,37 +9,43 @@ from .logs import Record
 class Project:
     def __init__(self, project_file):
         """
+        Creates a new instance of a project. If an error occurs in creating/opening the project files. If successful,
+        self.exception will be None. Otherwise, the instance should be discarded.
         :param project_file: The path to a .elv file.
         """
-        # Create the project directory if it doesn't exist.
-        project_directory = os.path.dirname(project_file)
-        if not os.path.exists(project_directory):
-            os.makedirs(project_directory)
+        self.exception = None
+        try:
+            # Create the project directory if it doesn't exist.
+            project_directory = os.path.dirname(project_file)
+            if not os.path.exists(project_directory):
+                os.makedirs(project_directory)
 
-        # Create the project file if it doesn't exist
-        open(project_file, 'a').close()
+            # Create the project file if it doesn't exist
+            open(project_file, 'a').close()
 
-        # Set up the directory structure
-        self._path = project_directory
-        self._log_file = 'logs.sqlite'
-        self._log_path = os.path.join(self._path, self._log_file)
-        self._config_file = os.path.basename(project_file)
-        self._config_path = project_file
+            # Set up the directory structure
+            self._path = project_directory
+            self._log_file = 'logs.sqlite'
+            self._log_path = os.path.join(self._path, self._log_file)
+            self._config_file = os.path.basename(project_file)
+            self._config_path = project_file
 
-        # Create a database connection
-        self._conn = sql.connect(self._log_path, check_same_thread=False)
-        schema_file = get_package_data_path(__file__, *('config/schema.sql'.split('/')))
+            # Create a database connection
+            self._conn = sql.connect(self._log_path, check_same_thread=False)
+            schema_file = get_package_data_path(__file__, *('config/schema.sql'.split('/')))
 
-        # Set up the database if not exists
-        with open(schema_file) as schema:
-            self._conn.executescript(schema.read())
-            self._conn.commit()
+            # Set up the database if not exists
+            with open(schema_file) as schema:
+                self._conn.executescript(schema.read())
+                self._conn.commit()
 
-        # Fetch the column names
-        self._columns = [col_info[1] for col_info in self._conn.execute('PRAGMA table_info(logs);')]
+            # Fetch the column names
+            self._columns = [col_info[1] for col_info in self._conn.execute('PRAGMA table_info(logs);')]
 
-        # Load the project config
-        self._config = None
+            # Load the project config
+            self._config = None
+        except Exception as e:
+            self.exception = e
 
     def get_path(self):
         """
