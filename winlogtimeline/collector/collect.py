@@ -53,7 +53,7 @@ def xml_convert(records, file_hash, recovered=True):
 
         sys = d['Event']['System']
 
-        dictionary = parser(record, {
+        dictionary = parser(d, {
             'timestamp_utc': sys['TimeCreated']['@SystemTime'],
             'event_id': sys['EventID'],
             'description': '',
