@@ -135,13 +135,17 @@ class EventSection(Frame):
         self.tree = Treeview(columns=self.headers, show='headings')
 
         col_width = {header: font.Font().measure(header) for header in headers}
-
+        """
         # Determine the column widths
         for row in data:
             for i, v in enumerate(row):
+                print(i, self.headers[i], v)
+                if self.headers[i] == "Details":
+                    continue
                 width = font.Font().measure(v)
                 if width > col_width[self.headers[i]]:
                     col_width[self.headers[i]] = width
+        """
 
         # Set up the columns
         for col in self.headers:
