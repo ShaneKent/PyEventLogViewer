@@ -93,6 +93,7 @@ class GUI(Tk):
                 r = self.current_project.get_all_logs()
                 if len(r) == 0:
                     self.__enable__()
+                    self.update_status_bar('Done.')
                     return
                 h = r[0].get_headers()
                 r = [record.get_tuple() for record in r]
@@ -135,17 +136,27 @@ class EventSection(Frame):
         self.tree = Treeview(columns=self.headers, show='headings')
 
         col_width = {header: font.Font().measure(header) for header in headers}
-        """
+        # TODO see if this can be done in a reasonable amount of time
+        # Dynamic programming?
+        known_s_widths = dict()
+        known_widths = dict()
+        excluded_headers = {'Details',}
+        measurement_font = font.Font()
         # Determine the column widths
         for row in data:
             for i, v in enumerate(row):
-                print(i, self.headers[i], v)
-                if self.headers[i] == "Details":
+                if self.headers[i] in excluded_headers:
                     continue
-                width = font.Font().measure(v)
+                if type(v) is str:
+                    if len(v) not in known_s_widths:
+                        known_s_widths[len(v)] = measurement_font.measure(v)
+                    width = known_s_widths[len(v)]
+                else:
+                    if v not in known_widths:
+                        known_widths[v] = measurement_font.measure(v)
+                    width = known_widths[v]
                 if width > col_width[self.headers[i]]:
                     col_width[self.headers[i]] = width
-        """
 
         # Set up the columns
         for col in self.headers:
