@@ -16,7 +16,7 @@ class NewProjectWizard(Toplevel):
         # Window parameters
         self.title('New Project')
         self.resizable(width=False, height=False)
-        self.minsize(width=500, height=100)
+        self.minsize(width=400, height=100)
 
         # Create and place the widgets
         self._init_widgets()
@@ -27,23 +27,25 @@ class NewProjectWizard(Toplevel):
         Creates the elements of this window and sets configuration values.
         :return:
         """
+        # Container frame
+        self.container = Frame(self)
         # Workspace block
         self.sv_workspace = StringVar()
         self.sv_workspace.trace('w', lambda *args: self.callback_update_path())
-        self.label_workspace = Label(self, text='Workspace:')
-        self.entry_workspace = Entry(self, textvariable=self.sv_workspace)
-        self.button_workspace = Button(self, text='...', width=1, command=self.callback_path_prompt)
+        self.label_workspace = Label(self.container, text='Workspace:')
+        self.entry_workspace = Entry(self.container, textvariable=self.sv_workspace)
+        self.button_workspace = Button(self.container, text='...', width=1, command=self.callback_path_prompt)
         # Title block
         self.sv_title = StringVar()
         self.sv_title.trace('w', lambda *args: self.callback_update_path())
-        self.label_title = Label(self, text='Title:')
-        self.entry_title = Entry(self, textvariable=self.sv_title)
+        self.label_title = Label(self.container, text='Title:')
+        self.entry_title = Entry(self.container, textvariable=self.sv_title)
         # Path block
-        self.label_path = Label(self, text='The project will be created in the following directory:')
-        self.entry_path = Entry(self, state='readonly')
+        self.label_path = Label(self.container, text='The project will be created in the following directory:')
+        self.entry_path = Entry(self.container, state='readonly')
         # Action block
-        self.button_create = Button(self, text='Create', underline=1, command=self.callback_create)
-        self.button_cancel = Button(self, text='Cancel', underline=0, command=self.callback_cancel)
+        self.button_create = Button(self.container, text='Create', underline=1, command=self.callback_create)
+        self.button_cancel = Button(self.container, text='Cancel', underline=0, command=self.callback_cancel)
         self.bind('<Alt-r>', self.callback_create)
         self.bind('<Alt-c>', self.callback_cancel)
 
@@ -73,6 +75,10 @@ class NewProjectWizard(Toplevel):
 
         # Specify which portion to auto-expand
         self.columnconfigure(0, weight=4)
+
+        # Place the container frame
+        self.container.pack(side=LEFT, fill=BOTH)
+
 
     def callback_path_prompt(self):
         """
