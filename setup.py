@@ -23,8 +23,11 @@ SCRIPT_GLOBS = ['*.py', '*.pyw']
 
 DEPENDENCIES = ['libevtx-python',
                 'appdirs',
-                'xmltodict',
-                'pytest']
+                'xmltodict']
+
+SETUP_DEPENDENCIES = ['pytest-runner']
+
+TEST_DEPENDENCIES = ['pytest']
 
 """Automated argument formatting and setup call"""
 # Grab all of the packages
@@ -43,4 +46,6 @@ setup(
     package_data=pkg_data,
     scripts=scripts,
     install_requires=DEPENDENCIES,
+    setup_requires=SETUP_DEPENDENCIES,
+    tests_require=TEST_DEPENDENCIES
 )

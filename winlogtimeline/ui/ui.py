@@ -11,6 +11,7 @@ from .new_project_wizard import NewProjectWizard
 
 import os
 
+from winlogtimeline.util.logs import Record
 
 class GUI(Tk):
     def __init__(self, *args, **kwargs):
@@ -26,6 +27,7 @@ class GUI(Tk):
         self.status_bar = StatusBar(self)
         self.toolbar = Toolbar(self)
         self.query_bar = QueryBar(self)
+        self.filter_section = Filters(self)
         self.event_section = None
 
         self.__disable__()
@@ -95,7 +97,7 @@ class GUI(Tk):
                     self.__enable__()
                     self.update_status_bar('Done.')
                     return
-                h = r[0].get_headers()
+                h = Record.get_headers()
                 r = [record.get_tuple() for record in r]
 
             # Delete the old timeline if it exists
@@ -120,6 +122,7 @@ class GUI(Tk):
     def __enable__(self):
         self.toolbar.__enable__()
         self.query_bar.__enable__()
+        self.filter_section.__enable__()
 
     def __destroy__(self):
         self.close_project()
@@ -348,3 +351,55 @@ class MenuBar(Menu):
         """
         self.master.current_project.save()
         self.master.update_status_bar('Project saved!')
+
+
+class Filters(Frame):
+    def __init__(self, parent, **kwargs):
+        super().__init__(parent, **kwargs)
+        self.pack(side=TOP, fill=X)
+
+        # Filter Label
+        self.flabel = Label(self, text='Filters:', anchor=W, **kwargs)
+        self.flabel.pack(side=LEFT)
+
+        # List of filter columns
+        self.colList = ['- Select Column -']
+        self.create_colList(self.colList)
+
+        # Column variable
+        self.cvar = StringVar(self)
+        self.cvar.set(self.colList[0])
+
+        # Filter columns drop down menu
+        self.columns = OptionMenu(self, self.cvar, *self.colList)
+        self.columns.config(width='15')
+        self.columns.pack(side=LEFT)
+
+        # List of operation columns
+        self.opList = ['- Select Operation -']
+        self.create_opList(self.opList)
+
+        # Operation variable
+        self.ovar = StringVar(self)
+        self.ovar.set(self.opList[0])
+
+        # Filter operations drop down menu
+        self.operations = OptionMenu(self, self.ovar, *self.opList)
+        self.operations.config(width='15')
+        self.operations.pack(side=LEFT)
+
+    def __disable__(self):
+        self.flabel.config(state=DISABLED)
+        self.columns.config(state=DISABLED)
+
+    def __enable__(self):
+        self.flabel.config(state=NORMAL)
+        self.columns.config(state=NORMAL)
+
+    def create_colList(self, colList):
+        tmp = Record.get_headers()
+        for i in range(len(tmp)):
+            colList.append(tmp[i])
+
+    def create_opList(self, opList):
+        print(self.cvar.get())

@@ -24,7 +24,8 @@ class Record:
             self.session_id, self.account, self.computer_name, self.record_number, self.recovered, self.source_file_hash
         )
 
-    def get_headers(self):
+    @classmethod
+    def get_headers(cls):
         return (
             'Timestamp (UTC)', 'Event ID', 'Description', 'Details', 'Event Source', 'Event Log', 'Session ID',
             'Account', 'Computer Name', 'Record Number', 'Recovered', 'Source File Hash'
