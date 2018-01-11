@@ -8,6 +8,7 @@ from winlogtimeline import util
 from winlogtimeline import collector
 
 from .new_project_wizard import NewProjectWizard
+from .import_wizard import ImportWizard
 
 import os
 
@@ -73,6 +74,24 @@ class GUI(Tk):
         if self.event_section is not None:
             self.event_section.pack_forget()
             self.event_section = None
+
+    def import_function(self, file_name, alias):
+
+        def callback():
+            # Prepare status bar callback.
+            text = '{file}: {status}'.format(file=os.path.basename(file_name), status='{status}')
+
+            # Start the import log process.
+            collector.import_log(file_name, alias, self.current_project, '',
+                                 lambda s: self.update_status_bar(text.format(status=s)))
+
+            # Create or update the timeline.
+            self.create_new_timeline()
+
+        t = Thread(target=callback)
+        t.start()
+
+        return
 
     def create_new_timeline(self, headers=None, records=None):
         """
@@ -240,9 +259,9 @@ class Toolbar(Frame):
         self.format_photo = PhotoImage(file=util.data.get_package_data_path(__file__, 'icons', 'format.gif'))
 
         self.import_button = Button(self, image=self.import_photo, width='20',
-                                    command=lambda: self.import_function())
+                                    command=lambda: self.import_button_function())
         self.format_button = Button(self, image=self.format_photo, width='20',
-                                    command=lambda: self.format_function())
+                                    command=lambda: self.format_button_function())
 
         self.import_button.pack()
         self.format_button.pack()
@@ -257,30 +276,11 @@ class Toolbar(Frame):
         self.import_button.config(state=NORMAL)
         self.format_button.config(state=NORMAL)
 
-    def import_function(self):
-        file_path = filedialog.askopenfilename(title='Open an event log file',
-                                               filetypes=(('Windows Event Log File', '*.evtx'),))
+    def import_button_function(self):
+        wizard = ImportWizard(self)
+        wizard.grab_set()
 
-        if len(file_path) == 0:
-            return
-
-        file_path = os.path.abspath(file_path)
-
-        def callback():
-            text = '{file}: {status}'.format(file=os.path.basename(file_path), status='{status}')
-
-            self.master.update_status_bar(text.format(status='Waiting to start'))
-            collector.import_log(file_path, self.master.current_project, '',
-                                 lambda s: self.master.update_status_bar(text.format(status=s)))
-
-            self.master.create_new_timeline()
-
-        t = Thread(target=callback)
-        t.start()
-
-        return
-
-    def format_function(self):
+    def format_button_function(self):
         self.master.status_bar.status.config(text='"Format" button pressed.')
         return
 

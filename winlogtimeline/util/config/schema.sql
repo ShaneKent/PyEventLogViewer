@@ -24,5 +24,6 @@ CREATE TABLE IF NOT EXISTS source_files (
   file_name TEXT NOT NULL,
   hash TEXT NOT NULL UNIQUE,
   import_timestamp DATETIME NOT NULL,
+  alias TEXT NOT NULL,
   computer_name TEXT
 );
