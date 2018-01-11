@@ -105,17 +105,18 @@ class Project:
             )
             self._conn.execute(query, values)
 
-    def write_verification_data(self, file_hash, log_file):
+    def write_verification_data(self, file_hash, log_file, alias):
         """
         Used to store data for verifying the integrity of the data source.
         :param file_hash:
         :param log_file:
+        :param alias:
         :return: None
         """
         time = datetime.utcnow()
 
-        query = 'INSERT INTO source_files (file_name, hash, import_timestamp) VALUES (?, ?, ?)'
-        values = (log_file, file_hash, time)
+        query = 'INSERT INTO source_files (file_name, hash, import_timestamp, alias) VALUES (?, ?, ?, ?)'
+        values = (log_file, file_hash, time, alias)
 
         self._conn.execute(query, values)
 
