@@ -125,7 +125,7 @@ class GUI(Tk):
 
             self.update_status_bar('Rendering timeline...')
             # Create the new timeline
-            self.event_section = EventSection(self, h, r)
+            self.event_section = Timeline(self, h, r)
 
             self.update_status_bar('')
             # Enable all timeline interaction buttons
@@ -137,43 +137,83 @@ class GUI(Tk):
     def __disable__(self):
         self.toolbar.__disable__()
         self.query_bar.__disable__()
+        self.menu_bar.__disable__()
 
     def __enable__(self):
         self.toolbar.__enable__()
         self.query_bar.__enable__()
-        self.filter_section.__enable__()
+        # self.filter_section.__enable__()
+        self.menu_bar.__enable__()
 
     def __destroy__(self):
         self.close_project()
         self.destroy()
 
 
-class EventSection(Frame):
+class Timeline(Frame):
     def __init__(self, parent, headers, data, **kwargs):
-        # Set up the frame
         super().__init__(parent, **kwargs)
+
+        # Class variables
         self.headers = headers
-        self.pack(fill='both', expand=True)
+        self.col_width = {header: font.Font().measure(header) for header in headers}
+
+        # Create and place the widgets
+        self._init_widgets()
+        self.setup_columns(headers)
+        self.update_column_widths(data)
+        self.update_tags(self.master.program_config['events'])
+        self.populate_timeline(data)
+        self._place_widgets()
+
+    def update_tags(self, tags):
+        # Load the tags from the config
+        for event in tags:
+            self.tree.tag_configure(event['event_id'], background=event['color'])
+
+    def _init_widgets(self):
         # Treeview
         self.tree = Treeview(columns=self.headers, show='headings')
+        # Scrollbars
+        self.vsb = Scrollbar(orient='vertical', command=self.tree.yview)
+        self.hsb = Scrollbar(orient='horizontal', command=self.tree.xview)
+        self.tree.configure(yscrollcommand=self.vsb.set, xscrollcommand=self.hsb.set)
 
-        col_width = {header: font.Font().measure(header) for header in headers}
-        # TODO see if this can be done in a reasonable amount of time
+    def _place_widgets(self):
+        # Tree
+        self.tree.grid(column=0, row=0, sticky='nsew', in_=self)
+        # Scrollbars
+        self.vsb.grid(column=1, row=0, sticky='ns', in_=self)
+        self.hsb.grid(column=0, row=1, sticky='ew', in_=self)
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_rowconfigure(0, weight=1)
+        self.pack(fill='both', expand=True)
 
-        # Dynamic programming?
+    def setup_columns(self, headers):
+        # Set up the columns
+        for col in self.headers:
+            self.tree.heading(col, text=col.title(), command=lambda _col=col: self.sort_column(_col, False))
+
+    def populate_timeline(self, data):
+        # Insert the data
+        for i, row in enumerate(data):
+            if not i%100:
+                self.master.update_status_bar('{} records ready to render.'.format(i))
+            # TODO: Change the tags to use event source and event id instead of just event id
+            self.tree.insert('', 'end', values=row, tags=str(row[1]))
+
+
+    def update_column_widths(self, data):
         known_s_widths = dict()
         known_widths = dict()
-        excluded_headers = {'Details',}
+        excluded_headers = {'Details', }
         measurement_font = font.Font()
 
         # Determine the column widths
         self.master.update_status_bar("Determining the column widths.")
-        j = 1
-        for row in data:
-
-            if j % 10 == 0:
+        for j, row in enumerate(data):
+            if not j % 100:
                 self.master.update_status_bar('Prepared information for {} records.'.format(j))
-            j += 1
 
             for i, v in enumerate(row):
                 if self.headers[i] in excluded_headers:
@@ -186,11 +226,10 @@ class EventSection(Frame):
                     if v not in known_widths:
                         known_widths[v] = measurement_font.measure(v)
                     width = known_widths[v]
-                if width > col_width[self.headers[i]]:
-                    col_width[self.headers[i]] = width
-
-        # Set up the columns
+                if width > self.col_width[self.headers[i]]:
+                    self.col_width[self.headers[i]] = width
         for col in self.headers:
+            self.tree.column(col, width=self.col_width[col])
             self.tree.heading(col, text=col.title(), command=lambda _col=col: self.sort_column(_col, False))
             self.tree.column(col, width=col_width[col])
 

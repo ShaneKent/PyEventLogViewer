@@ -7,28 +7,28 @@ from .logs import Record
 
 
 class Project:
-    def __init__(self, project_file):
+    def __init__(self, project_file_path):
         """
         Creates a new instance of a project. If an error occurs in creating/opening the project files. If successful,
         self.exception will be None. Otherwise, the instance should be discarded.
-        :param project_file: The path to a .elv file.
+        :param project_file_path: The path to a .elv file.
         """
         self.exception = None
         try:
             # Create the project directory if it doesn't exist.
-            project_directory = os.path.dirname(project_file)
+            project_directory = os.path.dirname(project_file_path)
             if not os.path.exists(project_directory):
                 os.makedirs(project_directory)
 
             # Create the project file if it doesn't exist
-            open(project_file, 'a').close()
+            open(project_file_path, 'a').close()
 
             # Set up the directory structure
             self._path = project_directory
             self._log_file = 'logs.sqlite'
             self._log_path = os.path.join(self._path, self._log_file)
-            self._config_file = os.path.basename(project_file)
-            self._config_path = project_file
+            self._config_file = os.path.basename(project_file_path)
+            self._config_path = project_file_path
 
             # Create a database connection
             self._conn = sql.connect(self._log_path, check_same_thread=False)
