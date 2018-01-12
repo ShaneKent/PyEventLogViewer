@@ -160,9 +160,9 @@ class Timeline(Frame):
 
         # Create and place the widgets
         self._init_widgets()
-        self.setup_columns(headers)
+        self.setup_columns()
         self.update_column_widths(data)
-        self.update_tags(self.master.program_config['events'])
+        self.update_tags(parent.current_project.config['events'])
         self.populate_timeline(data)
         self._place_widgets()
 
@@ -189,7 +189,7 @@ class Timeline(Frame):
         self.grid_rowconfigure(0, weight=1)
         self.pack(fill='both', expand=True)
 
-    def setup_columns(self, headers):
+    def setup_columns(self):
         # Set up the columns
         for col in self.headers:
             self.tree.heading(col, text=col.title(), command=lambda _col=col: self.sort_column(_col, False))
@@ -258,10 +258,10 @@ class Timeline(Frame):
         self.grid_rowconfigure(0, weight=1)
 
     def sort_column(self, col, reverse):
-        l = [(self.tree.set(k, col), k) for k in self.tree.get_children('')]
-        l.sort(reverse=reverse)
+        column_elements = [(self.tree.set(k, col), k) for k in self.tree.get_children('')]
+        column_elements.sort(reverse=reverse)
 
-        for index, (val, k) in enumerate(l):
+        for index, (val, k) in enumerate(column_elements):
             self.tree.move(k, '', index)
 
         self.tree.heading(col, command=lambda _col=col: self.sort_column(_col, not reverse))

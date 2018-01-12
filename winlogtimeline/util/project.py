@@ -1,7 +1,9 @@
+import json
 import os
 import sqlite3 as sql
 from datetime import datetime
 
+import util
 from .data import get_package_data_path
 from .logs import Record
 
@@ -20,15 +22,23 @@ class Project:
             if not os.path.exists(project_directory):
                 os.makedirs(project_directory)
 
-            # Create the project file if it doesn't exist
-            open(project_file_path, 'a').close()
-
             # Set up the directory structure
             self._path = project_directory
             self._log_file = 'logs.sqlite'
             self._log_path = os.path.join(self._path, self._log_file)
             self._config_file = os.path.basename(project_file_path)
             self._config_path = project_file_path
+
+            # Create the project file if it doesn't exist
+            open(project_file_path, 'a').close()
+
+            # Read config
+            with open(project_file_path, 'r') as config:
+                data = config.read()
+                if not data:
+                    self.config = util.data.open_config()
+                else:
+                    self.config = json.loads(data)
 
             # Create a database connection
             self._conn = sql.connect(self._log_path, check_same_thread=False)
@@ -42,8 +52,6 @@ class Project:
             # Fetch the column names
             self._columns = [col_info[1] for col_info in self._conn.execute('PRAGMA table_info(logs);')]
 
-            # Load the project config
-            self._config = None
         except Exception as e:
             self.exception = e
 
@@ -63,6 +71,8 @@ class Project:
         self._conn.commit()
 
         # Save the configuration
+        with open(self._config_path, 'w') as config:
+            config.write(json.dumps(self.config))
 
     def save_as(self):
         """
@@ -81,10 +91,6 @@ class Project:
 
         # Close the log file
         self._conn.close()
-
-        # Close the configuration
-        # TODO: review whether the configuration file needs an open file descriptor at all times. If not, the file can
-        # be opened and closed during read/save, and nothing needs to be done here apart from deleting this comment.
 
     def write_log_data(self, record):
         """
