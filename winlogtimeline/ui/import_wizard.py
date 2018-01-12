@@ -60,21 +60,21 @@ class ImportWizard(Toplevel):
         # Workspace block
         self.label_file.grid(row=0, column=0, padx=padding, sticky='SW')
         self.entry_file.grid(row=1, column=0, columnspan=4, padx=padding, pady=padding, sticky='NESW')
-        self.button_file.grid(row=1, column=4, padx=padding, pady=padding, sticky='EW')
+        self.button_file.grid(row=1, column=5, padx=padding, pady=padding, sticky='EW')
 
         # Title block
         self.label_alias.grid(row=2, column=0, padx=padding, sticky='SW')
-        self.entry_alias.grid(row=3, column=0, columnspan=8, padx=padding, pady=padding, sticky='EW')
+        self.entry_alias.grid(row=3, column=0, padx=padding, pady=padding, sticky='NESW')
 
         # Action block
         self.button_cancel.grid(row=6, column=2, padx=padding, pady=padding, sticky='EW')
-        self.button_import.grid(row=6, column=3, columnspan=2, padx=padding, pady=padding, sticky='EW')
+        self.button_import.grid(row=6, column=3, padx=padding, pady=padding, sticky='EW')
 
         # Specify which portion to auto-expand
-        # self.columnconfigure(0, weight=4)
+        self.columnconfigure(0, weight=4)
 
         # Place the container frame
-        self.container.pack(side=LEFT, fill=BOTH)
+        self.container.pack(fill=BOTH)
 
     def callback_path_prompt(self):
         """
