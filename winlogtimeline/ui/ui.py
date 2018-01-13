@@ -349,8 +349,8 @@ class MenuBar(Menu):
         self.tool_menu = Menu(self, **kwargs)
         self.add_cascade(label='Tools', menu=self.tool_menu, underline=0)
 
-        # Tools -> Labels
-        self.tool_menu.add_command(label='Labels', command=self.color_settings_function, underline=0)
+        # Tools -> Timeline Colors
+        self.tool_menu.add_command(label='Timeline Colors', command=self.color_settings_function, underline=0)
 
     def new_project_function(self, event=None):
         """

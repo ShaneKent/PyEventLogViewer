@@ -3,8 +3,7 @@ import os
 import sqlite3 as sql
 from datetime import datetime
 
-import util
-from .data import get_package_data_path
+from .data import get_package_data_path, open_config
 from .logs import Record
 
 
@@ -36,7 +35,7 @@ class Project:
             with open(project_file_path, 'r') as config:
                 data = config.read()
                 if not data:
-                    self.config = util.data.open_config()
+                    self.config = open_config()
                 else:
                     self.config = json.loads(data)
 

@@ -11,7 +11,7 @@ class TagSettings(Toplevel):
         self.tags = dict()
 
         # Window Parameters
-        self.title('Project Settings')
+        self.title('Record Tag Settings')
         self.resizable(width=False, height=False)
 
         # Create and place the widgets
@@ -32,29 +32,41 @@ class TagSettings(Toplevel):
         self.tag_list.bind('<<ListboxSelect>>', self.callback_update_select_background)
         self.vsb = Scrollbar(self.listbox_container, orient='vertical', command=self.tag_list.yview)
         # Buttons for editing tags
-        self.add_button = Button(self.container, text='Add', command=self.callback_add_tag)
-        self.delete_button = Button(self.container, text='Delete', command=self.callback_remove_tag)
+        self.add_button = Button(self.container, text='Add', command=self.callback_add_tag, underline=0)
+        self.bind('<Alt-a>', self.callback_add_tag)
+        self.delete_button = Button(self.container, text='Delete', command=self.callback_remove_tag, underline=0)
+        self.bind('<Alt-d>', self.callback_remove_tag)
+        # Sliders
+        self.slider_container = Frame(self.container)
         # Red config
         self.red = IntVar()
-        self.r_slider = Scale(self.container, from_=0, to=255, variable=self.red,
+        self.r_label = Label(self.slider_container, text='R: ')
+        self.r_slider = Scale(self.slider_container, from_=0, to=255, variable=self.red,
                               command=lambda *args: self.truncate(self.r_slider))
-        self.r_label = Label(self.container, text='0')
-        self.red.trace('w', lambda *args: self.callback_update_label(self.red, self.r_label))
+        self.r_value_label = Label(self.slider_container, text='0')
+        self.red.trace('w', lambda *args: self.callback_update_label(self.red, self.r_value_label))
+        self.r_slider.set(255)
         # Green config
         self.green = IntVar()
-        self.g_slider = Scale(self.container, from_=0, to=255, variable=self.green,
+        self.g_label = Label(self.slider_container, text='G: ')
+        self.g_slider = Scale(self.slider_container, from_=0, to=255, variable=self.green,
                               command=lambda *args: self.truncate(self.g_slider))
-        self.g_label = Label(self.container, text='0')
-        self.green.trace('w', lambda *args: self.callback_update_label(self.green, self.g_label))
+        self.g_value_label = Label(self.slider_container, text='0')
+        self.green.trace('w', lambda *args: self.callback_update_label(self.green, self.g_value_label))
+        self.g_slider.set(255)
         # Blue config
         self.blue = IntVar()
-        self.b_slider = Scale(self.container, from_=0, to=255, variable=self.blue,
+        self.b_label = Label(self.slider_container, text='B: ')
+        self.b_slider = Scale(self.slider_container, from_=0, to=255, variable=self.blue,
                               command=lambda *args: self.truncate(self.b_slider))
-        self.b_label = Label(self.container, text='0')
-        self.blue.trace('w', lambda *args: self.callback_update_label(self.blue, self.b_label))
+        self.b_value_label = Label(self.slider_container, text='0')
+        self.blue.trace('w', lambda *args: self.callback_update_label(self.blue, self.b_value_label))
+        self.b_slider.set(255)
         # Finish and cancel buttons
-        self.finish_button = Button(self.container, text='Finish', command=self.callback_finish)
-        self.cancel_button = Button(self.container, text='Cancel', command=self.callback_cancel)
+        self.finish_button = Button(self.container, text='Finish', command=self.callback_finish, underline=0)
+        self.bind('<Alt-f>', self.callback_finish)
+        self.cancel_button = Button(self.container, text='Cancel', command=self.callback_cancel, underline=0)
+        self.bind('<Alt-c>', self.callback_cancel)
 
     def _place_widgets(self):
         """
@@ -63,25 +75,32 @@ class TagSettings(Toplevel):
         """
         padding = 3
         # Listbox for tags
-        self.tag_list.grid(row=0, column=0, columnspan=3, sticky='NESW')
-        self.vsb.grid(row=0, column=3, columnspan=1, sticky='NESW')
+        self.tag_list.grid(row=0, column=0, columnspan=4, sticky='NESW')
+        self.vsb.grid(row=0, column=4, sticky='NESW')
         self.listbox_container.columnconfigure(0, weight=4)
-        self.listbox_container.grid(row=0, column=0, columnspan=4, padx=padding, pady=padding, sticky='NESW')
+        self.listbox_container.grid(row=0, column=0, columnspan=5, padx=padding, pady=padding, sticky='NESW')
         # Buttons for editing tags
-        self.add_button.grid(row=1, column=1, padx=padding, pady=padding, sticky='E')
-        self.delete_button.grid(row=1, column=2, columnspan=2, padx=padding, pady=padding, sticky='E')
+        self.add_button.grid(row=1, column=3, padx=padding, pady=padding, sticky='E')
+        self.delete_button.grid(row=1, column=4, padx=padding, pady=padding, sticky='E')
         # Red config
-        self.r_slider.grid(row=2, column=0, columnspan=3, padx=padding, sticky='EW')
-        self.r_label.grid(row=2, column=3, padx=padding, sticky='E')
+        self.r_label.grid(row=2, column=0, sticky='EW')
+        self.r_slider.grid(row=2, column=1, columnspan=3, sticky='EW')
+        self.r_value_label.grid(row=2, column=4, sticky='EW')
         # Green config
-        self.g_slider.grid(row=3, column=0, columnspan=3, padx=padding, sticky='EW')
-        self.g_label.grid(row=3, column=3, padx=padding, sticky='E')
+        self.g_label.grid(row=3, column=0, sticky='EW')
+        self.g_slider.grid(row=3, column=1, columnspan=3, sticky='EW')
+        self.g_value_label.grid(row=3, column=4, sticky='EW')
         # Blue config
-        self.b_slider.grid(row=4, column=0, columnspan=3, padx=padding, sticky='EW')
-        self.b_label.grid(row=4, column=3, padx=padding, sticky='E')
+        self.b_label.grid(row=4, column=0, sticky='EW')
+        self.b_slider.grid(row=4, column=1, columnspan=3, sticky='EW')
+        self.b_value_label.grid(row=4, column=4, sticky='EW')
+        # Slider container
+        self.slider_container.columnconfigure(1, weight=4)
+        self.slider_container.columnconfigure(4, minsize=25)
+        self.slider_container.grid(row=2, column=0, columnspan=5, padx=padding, sticky='NESW')
         # Finish and cancel buttons
-        self.finish_button.grid(row=5, column=1, padx=padding, pady=padding, sticky='E')
-        self.cancel_button.grid(row=5, column=2, padx=padding, pady=padding, columnspan=2, sticky='E')
+        self.finish_button.grid(row=5, column=3, padx=padding, pady=padding, sticky='E')
+        self.cancel_button.grid(row=5, column=4, padx=padding, pady=padding, sticky='E')
         # Master container frame
         self.container.pack(side=LEFT, fill=BOTH)
 
@@ -131,6 +150,8 @@ class TagSettings(Toplevel):
         :return:
         """
         selection = self.tag_list.curselection()
+        if not selection:
+            return
         tag = self.tag_list.get(selection[0])
         hex_color = self.tags[tag]
         self.tag_list.config(selectbackground=hex_color)
@@ -146,13 +167,16 @@ class TagSettings(Toplevel):
         :return:
         """
         selection = self.tag_list.curselection()
+        if not selection:
+            return
         tag = self.tag_list.get(selection[0])
         r, g, b = tuple(map(int, (self.r_slider.get(), self.g_slider.get(), self.b_slider.get())))
         hex_color = f'#{r:02x}{g:02x}{b:02x}'
         self.tags[tag] = hex_color
         self.tag_list.config(selectbackground=hex_color)
+        self.tag_list.itemconfig(selection[0], bg=hex_color)
 
-    def callback_add_tag(self):
+    def callback_add_tag(self, event=None):
         """
         Creates a dialog window for the user to enter a new tag.
         :return:
@@ -160,8 +184,10 @@ class TagSettings(Toplevel):
         window = TagPrompt(self)
         window.grab_set()
 
-    def callback_remove_tag(self):
+    def callback_remove_tag(self, event=None):
         selection = self.tag_list.curselection()
+        if not selection:
+            return
         tag = self.tag_list.get(selection[0])
         self.tags.pop(tag)
         self.tag_list.delete(selection[0])
@@ -169,7 +195,6 @@ class TagSettings(Toplevel):
     def callback_finish(self, event=None):
         """
         Callback used to finish making changes to the tags and return to master.
-        :param event:
         :return:
         """
         self.master.current_project.config['events'] = self.tags
@@ -216,7 +241,7 @@ class TagPrompt(Toplevel):
         padding = 3
         self.id_label.grid(row=0, column=0, columnspan=3, padx=padding, sticky='EW')
         self.id_entry.grid(row=1, column=0, columnspan=3, padx=padding, sticky='EW')
-        self.ok_button.grid(row=4, column=2, padx=padding, sticky='NESW')
+        self.ok_button.grid(row=4, column=1, padx=padding, sticky='NESW')
         self.container.pack()
 
     @staticmethod
