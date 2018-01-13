@@ -96,6 +96,11 @@ class ImportWizard(Toplevel):
             messagebox.showerror('Error', "The file doesn't exists:\n{}".format(record_file))
             return
 
+        aliases = self.master.master.current_project.get_alias_names()
+        if self.sv_alias.get() in aliases:
+            messagebox.showerror("Error", "The alias name '{}' has already been used.".format(self.sv_alias.get()))
+            return
+
         # call import function here -> calls from the ui.py
         self.master.master.import_function(record_file, self.sv_alias.get())
 

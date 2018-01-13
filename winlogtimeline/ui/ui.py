@@ -156,13 +156,22 @@ class EventSection(Frame):
 
         col_width = {header: font.Font().measure(header) for header in headers}
         # TODO see if this can be done in a reasonable amount of time
+
         # Dynamic programming?
         known_s_widths = dict()
         known_widths = dict()
         excluded_headers = {'Details',}
         measurement_font = font.Font()
+
         # Determine the column widths
+        self.master.update_status_bar("Determining the column widths.")
+        j = 1
         for row in data:
+
+            if j % 10 == 0:
+                self.master.update_status_bar('Prepared information for {} records.'.format(j))
+            j += 1
+
             for i, v in enumerate(row):
                 if self.headers[i] in excluded_headers:
                     continue
@@ -187,7 +196,12 @@ class EventSection(Frame):
             self.tree.tag_configure(event['event_id'], background=event['color'])
 
         # Insert the data
+        i = 1
         for row in data:
+            if i % 10 == 0:
+                self.master.update_status_bar('{} records ready to render.'.format(i))
+            i += 1
+
             # TODO: Change the tags to use event source and event id instead of just event id
             self.tree.insert('', 'end', values=row, tags=str(row[1]))
 
