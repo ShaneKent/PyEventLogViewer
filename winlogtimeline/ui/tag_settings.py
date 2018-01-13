@@ -1,4 +1,5 @@
 from tkinter import *
+from tkinter import messagebox
 from tkinter.ttk import *
 import re
 
@@ -257,6 +258,13 @@ class TagPrompt(Toplevel):
         return False
 
     def callback_ok(self):
+        tag = self.id_entry.get()
+        if not tag:
+            messagebox.showerror('Error', 'You must enter a value.')
+            return
+        if tag in self.master.tags:
+            messagebox.showerror('Error', 'That tag already exists.')
+            return
         self.master.insert_tag(self.id_entry.get(), '#FFFFFF')
         self.destroy()
 
