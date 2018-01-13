@@ -132,6 +132,17 @@ class Project:
 
         return logs
 
+    def get_alias_names(self):
+        """
+        :return: A list of all alias names that are stored in the project.
+        """
+        query = 'SELECT * FROM source_files'
+        rows = self._conn.execute(query).fetchall()
+
+        aliases = [row[3] for row in rows]
+
+        return aliases
+
     def is_duplicate(self, record):
         """
 
