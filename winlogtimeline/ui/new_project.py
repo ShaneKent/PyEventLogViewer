@@ -6,7 +6,7 @@ from winlogtimeline import util
 import os
 
 
-class NewProjectWizard(Toplevel):
+class NewProject(Toplevel):
     def __init__(self, parent):
         super().__init__(parent)
 
@@ -16,7 +16,6 @@ class NewProjectWizard(Toplevel):
         # Window parameters
         self.title('New Project')
         self.resizable(width=False, height=False)
-        self.minsize(width=400, height=100)
 
         # Create and place the widgets
         self._init_widgets()
@@ -78,7 +77,6 @@ class NewProjectWizard(Toplevel):
 
         # Place the container frame
         self.container.pack(side=LEFT, fill=BOTH)
-
 
     def callback_path_prompt(self):
         """
