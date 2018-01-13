@@ -7,12 +7,14 @@ from threading import Thread
 from winlogtimeline import util
 from winlogtimeline import collector
 
-from .new_project_wizard import NewProjectWizard
+from .new_project import NewProject
+from .tag_settings import TagSettings
 from .import_wizard import ImportWizard
 
 import os
 
 from winlogtimeline.util.logs import Record
+
 
 class GUI(Tk):
     def __init__(self, *args, **kwargs):
@@ -28,8 +30,8 @@ class GUI(Tk):
         self.status_bar = StatusBar(self)
         self.toolbar = Toolbar(self)
         self.query_bar = QueryBar(self)
-        self.filter_section = Filters(self)
-        self.event_section = None
+        # self.filter_section = Filters(self)
+        self.timeline = None
 
         self.__disable__()
         self.protocol('WM_DELETE_WINDOW', self.__destroy__)
@@ -38,8 +40,12 @@ class GUI(Tk):
         self.status_bar.status.config(text=text)
 
     def create_project(self):
-        wizard = NewProjectWizard(self)
-        wizard.grab_set()
+        window = NewProject(self)
+        window.grab_set()
+
+    def open_color_settings(self):
+        window = TagSettings(self)
+        window.grab_set()
 
     def open_project(self, project_path):
         """
@@ -73,9 +79,9 @@ class GUI(Tk):
             else:
                 return
 
-        if self.event_section is not None:
-            self.event_section.pack_forget()
-            self.event_section = None
+        if self.timeline is not None:
+            self.timeline.pack_forget()
+            self.timeline = None
 
     def import_function(self, file_name, alias):
 
@@ -120,12 +126,12 @@ class GUI(Tk):
                 r = [record.get_tuple() for record in r]
 
             # Delete the old timeline if it exists
-            if self.event_section is not None:
-                self.event_section.pack_forget()
+            if self.timeline is not None:
+                self.timeline.pack_forget()
 
             self.update_status_bar('Rendering timeline...')
             # Create the new timeline
-            self.event_section = Timeline(self, h, r)
+            self.timeline = Timeline(self, h, r)
 
             self.update_status_bar('')
             # Enable all timeline interaction buttons
@@ -168,8 +174,8 @@ class Timeline(Frame):
 
     def update_tags(self, tags):
         # Load the tags from the config
-        for event in tags:
-            self.tree.tag_configure(event['event_id'], background=event['color'])
+        for tag, color in tags.items():
+            self.tree.tag_configure(tag, background=color)
 
     def _init_widgets(self):
         # Treeview
@@ -230,32 +236,6 @@ class Timeline(Frame):
                     self.col_width[self.headers[i]] = width
         for col in self.headers:
             self.tree.column(col, width=self.col_width[col])
-            self.tree.heading(col, text=col.title(), command=lambda _col=col: self.sort_column(_col, False))
-            self.tree.column(col, width=col_width[col])
-
-        # Load the tags from the config
-        for event in self.master.program_config['events']:
-            self.tree.tag_configure(event['event_id'], background=event['color'])
-
-        # Insert the data
-        i = 1
-        for row in data:
-            if i % 10 == 0:
-                self.master.update_status_bar('{} records ready to render.'.format(i))
-            i += 1
-
-            # TODO: Change the tags to use event source and event id instead of just event id
-            self.tree.insert('', 'end', values=row, tags=str(row[1]))
-
-        # Scrollbars
-        vsb = Scrollbar(orient='vertical', command=self.tree.yview)
-        hsb = Scrollbar(orient='horizontal', command=self.tree.xview)
-        self.tree.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
-        self.tree.grid(column=0, row=0, sticky='nsew', in_=self)
-        vsb.grid(column=1, row=0, sticky='ns', in_=self)
-        hsb.grid(column=0, row=1, sticky='ew', in_=self)
-        self.grid_columnconfigure(0, weight=1)
-        self.grid_rowconfigure(0, weight=1)
 
     def sort_column(self, col, reverse):
         column_elements = [(self.tree.set(k, col), k) for k in self.tree.get_children('')]
@@ -346,9 +326,8 @@ class MenuBar(Menu):
         super().__init__(parent, **kwargs)
         parent.config(menu=self)
 
-        self.file_menu = Menu(self, **kwargs)
-
         # File
+        self.file_menu = Menu(self, **kwargs)
         self.add_cascade(label='File', menu=self.file_menu, underline=0)
 
         # File -> New Project (Ctrl+N)
@@ -365,6 +344,13 @@ class MenuBar(Menu):
         self.file_menu.add_command(label='Save', command=self.save_project_function, underline=0,
                                    accelerator='Ctrl+S')
         parent.bind('<Control-s>', self.save_project_function)
+
+        # Tools
+        self.tool_menu = Menu(self, **kwargs)
+        self.add_cascade(label='Tools', menu=self.tool_menu, underline=0)
+
+        # Tools -> Labels
+        self.tool_menu.add_command(label='Labels', command=self.color_settings_function, underline=0)
 
     def new_project_function(self, event=None):
         """
@@ -405,6 +391,21 @@ class MenuBar(Menu):
         self.master.current_project.save()
         self.master.update_status_bar('Project saved!')
 
+    def color_settings_function(self, event=None):
+        """
+        Callback function for Tools -> Color Settings. Alters the colors for the current project.
+        :param event: A click or key press event.
+        :return:
+        """
+        self.master.open_color_settings()
+
+    def __enable__(self):
+        # self.tool_menu.config('Color Settings', state=NORMAL)
+        self.entryconfig('Tools', state=NORMAL)
+
+    def __disable__(self):
+        # self.tool_menu.config('Color Settings', state=DISABLED)
+        self.entryconfig('Tools', state=DISABLED)
 
 # class Filters(Frame):
 #     def __init__(self, parent, **kwargs):

@@ -54,6 +54,7 @@ class Project:
 
         except Exception as e:
             self.exception = e
+            raise e
 
     def get_path(self):
         """
