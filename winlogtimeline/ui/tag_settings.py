@@ -10,6 +10,7 @@ class TagSettings(Toplevel):
 
         # Class variables
         self.tags = dict()
+        self.changes_made = False
 
         # Window Parameters
         self.title('Record Tag Settings')
@@ -176,6 +177,7 @@ class TagSettings(Toplevel):
         self.tags[tag] = hex_color
         self.tag_list.config(selectbackground=hex_color)
         self.tag_list.itemconfig(selection[0], bg=hex_color)
+        self.changes_made = True
 
     def callback_add_tag(self, event=None):
         """
@@ -192,6 +194,7 @@ class TagSettings(Toplevel):
         tag = self.tag_list.get(selection[0])
         self.tags.pop(tag)
         self.tag_list.delete(selection[0])
+        self.changes_made = True
 
     def callback_finish(self, event=None):
         """
@@ -201,6 +204,7 @@ class TagSettings(Toplevel):
         self.master.current_project.config['events'] = self.tags
         if self.master.timeline is not None:
             self.master.timeline.update_tags(self.tags)
+        self.master.changes_made |= self.changes_made
         self.destroy()
 
     def callback_cancel(self, event=None):
@@ -266,6 +270,7 @@ class TagPrompt(Toplevel):
             messagebox.showerror('Error', 'That tag already exists.')
             return
         self.master.insert_tag(self.id_entry.get(), '#FFFFFF')
+        self.master.changes_made = True
         self.destroy()
 
     def __destroy__(self):

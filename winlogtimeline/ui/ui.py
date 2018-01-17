@@ -8,7 +8,7 @@ from winlogtimeline import collector
 from winlogtimeline.util.logs import Record
 from .new_project import NewProject
 from .tag_settings import TagSettings
-from .import_window import ImportWizard
+from .import_window import ImportWindow
 import os
 import platform
 
@@ -45,14 +45,25 @@ class GUI(Tk):
         self.timeline = None
         self.enabled = True
         self.system = platform.system()
+        self.changes_made = False
 
         self.__disable__()
         self.protocol('WM_DELETE_WINDOW', self.__destroy__)
 
     def update_status_bar(self, text):
+        """
+        Updates the status bar.
+        :param text: The message to place in the status bar.
+        :return:
+        """
         self.status_bar.update_status(text)
 
     def get_progress_bar_context_manager(self, max_value):
+        """
+        Returns a context manager which can be used to create and update the progress bar.
+        :param max_value: The maximum value for the progress bar.
+        :return:
+        """
         return StatusBarContextManager(self.status_bar, max_value)
 
     def create_project(self):
@@ -82,12 +93,13 @@ class GUI(Tk):
         Prompts the user to save the project and then closes it.
         :return:
         """
-        if self.current_project is not None:
+        if self.current_project is not None and self.changes_made:
             answer = messagebox.askquestion(title='Save Before Close',
                                             message='Would you like to save the currently opened project before '
                                                     'closing it?', type=messagebox.YESNOCANCEL)
 
             if answer == messagebox.YES:
+                self.master.changes_made = False
                 self.current_project.close()
                 self.current_project = None
             elif answer == messagebox.NO:
@@ -113,6 +125,7 @@ class GUI(Tk):
 
             # Create or update the timeline.
             self.create_new_timeline()
+            self.changes_made = True
 
         t = Thread(target=callback)
         t.start()
@@ -376,7 +389,7 @@ class Toolbar(Frame):
 
     @enable_disable_wrapper(lambda *args: args[0].master)
     def import_button_function(self):
-        wizard = ImportWizard(self)
+        wizard = ImportWindow(self)
         wizard.grab_set()
 
     @enable_disable_wrapper(lambda *args: args[0].master)
@@ -444,6 +457,7 @@ class MenuBar(Menu):
                 self.master.update_status_bar('Project opened at ' + self.master.current_project.get_path())
             else:
                 self.master.update_status_bar('Failed to open the project at ' + filename)
+        self.master.changes_made = False
 
     @enable_disable_wrapper(lambda *args: args[0].master)
     def save_project_function(self, event=None):
@@ -454,6 +468,7 @@ class MenuBar(Menu):
         """
         self.master.current_project.save()
         self.master.update_status_bar('Project saved')
+        self.master.changes_made = False
 
     @enable_disable_wrapper(lambda *args: args[0].master)
     def color_settings_function(self, event=None):

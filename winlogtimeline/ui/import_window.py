@@ -6,7 +6,7 @@ from winlogtimeline import util
 import os
 
 
-class ImportWizard(Toplevel):
+class ImportWindow(Toplevel):
     def __init__(self, parent):
         super().__init__(parent)
 
