@@ -8,7 +8,7 @@ from winlogtimeline import collector
 from winlogtimeline.util.logs import Record
 from .new_project import NewProject
 from .tag_settings import TagSettings
-from .import_wizard import ImportWizard
+from .import_window import ImportWizard
 import os
 import platform
 

@@ -31,17 +31,21 @@ class NewProject(Toplevel):
         # Workspace block
         self.sv_workspace = StringVar()
         self.sv_workspace.trace('w', lambda *args: self.callback_update_path())
-        self.label_workspace = Label(self.container, text='Workspace:')
-        self.entry_workspace = Entry(self.container, textvariable=self.sv_workspace)
-        self.button_workspace = Button(self.container, text='...', width=1, command=self.callback_path_prompt)
+        self.workspace_container = Frame(self.container)
+        self.label_workspace = Label(self.workspace_container, text='Workspace:')
+        self.entry_workspace = Entry(self.workspace_container, width=60, textvariable=self.sv_workspace)
+        self.button_workspace = Button(self.workspace_container, text='...', width=3, command=self.callback_path_prompt)
+
         # Title block
         self.sv_title = StringVar()
         self.sv_title.trace('w', lambda *args: self.callback_update_path())
         self.label_title = Label(self.container, text='Title:')
         self.entry_title = Entry(self.container, textvariable=self.sv_title)
+
         # Path block
         self.label_path = Label(self.container, text='The project will be created in the following directory:')
         self.entry_path = Entry(self.container, state='readonly')
+
         # Action block
         self.button_create = Button(self.container, text='Create', underline=1, command=self.callback_create)
         self.button_cancel = Button(self.container, text='Cancel', underline=0, command=self.callback_cancel)
@@ -58,22 +62,28 @@ class NewProject(Toplevel):
         :return:
         """
         padding = 3
+
         # Workspace block
         self.label_workspace.grid(row=0, column=0, padx=padding, sticky='SW')
         self.entry_workspace.grid(row=1, column=0, columnspan=4, padx=padding, pady=padding, sticky='NESW')
         self.button_workspace.grid(row=1, column=4, padx=padding, pady=padding, sticky='EW')
+        self.workspace_container.columnconfigure(0, weight=4)
+        self.workspace_container.grid(row=0, column=0, rowspan=2, columnspan=5, sticky='EW')
+
         # Title block
         self.label_title.grid(row=2, column=0, padx=padding, sticky='SW')
         self.entry_title.grid(row=3, column=0, columnspan=5, padx=padding, pady=padding, sticky='EW')
+
         # Path block
         self.label_path.grid(row=4, column=0, padx=padding, sticky='SW')
         self.entry_path.grid(row=5, column=0, columnspan=5, padx=padding, pady=padding, sticky='EW')
+
         # Action block
-        self.button_cancel.grid(row=6, column=2, padx=padding, pady=padding, sticky='EW')
-        self.button_create.grid(row=6, column=3, columnspan=2, padx=padding, pady=padding, sticky='EW')
+        self.button_cancel.grid(row=6, column=3, padx=padding, pady=padding, sticky='EW')
+        self.button_create.grid(row=6, column=4, padx=padding, pady=padding, sticky='EW')
 
         # Specify which portion to auto-expand
-        self.columnconfigure(0, weight=4)
+        self.container.columnconfigure(0, weight=4)
 
         # Place the container frame
         self.container.pack(side=LEFT, fill=BOTH)

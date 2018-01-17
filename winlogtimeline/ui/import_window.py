@@ -13,9 +13,8 @@ class ImportWizard(Toplevel):
         # Class variables
 
         # Window parameters
-        self.title('Import Files')
+        self.title('Import Log Files')
         self.resizable(width=False, height=False)
-        self.minsize(width=400, height=100)
 
         # Create and place the widgets
         self._init_widgets()
@@ -31,9 +30,10 @@ class ImportWizard(Toplevel):
 
         # Workspace block
         self.sv_file = StringVar()
-        self.label_file = Label(self.container, text='File:')
-        self.entry_file = Entry(self.container, textvariable=self.sv_file)
-        self.button_file = Button(self.container, text='...', width=1, command=self.callback_path_prompt)
+        self.path_container = Frame(self.container)
+        self.label_file = Label(self.path_container, text='File:')
+        self.entry_file = Entry(self.path_container, width=60, textvariable=self.sv_file)
+        self.button_file = Button(self.path_container, width=3, text='...', command=self.callback_path_prompt)
 
         # Alias block
         self.sv_alias = StringVar()
@@ -60,18 +60,20 @@ class ImportWizard(Toplevel):
         # Workspace block
         self.label_file.grid(row=0, column=0, padx=padding, sticky='SW')
         self.entry_file.grid(row=1, column=0, columnspan=4, padx=padding, pady=padding, sticky='NESW')
-        self.button_file.grid(row=1, column=5, padx=padding, pady=padding, sticky='EW')
+        self.button_file.grid(row=1, column=4, padx=padding, pady=padding, sticky='EW')
+        self.path_container.columnconfigure(0, weight=4)
+        self.path_container.grid(row=0, column=0, columnspan=5, rowspan=2, sticky='EW')
 
-        # Title block
+        # Alias block
         self.label_alias.grid(row=2, column=0, padx=padding, sticky='SW')
-        self.entry_alias.grid(row=3, column=0, padx=padding, pady=padding, sticky='NESW')
+        self.entry_alias.grid(row=3, column=0, columnspan=5, padx=padding, pady=padding, sticky='NESW')
 
         # Action block
-        self.button_cancel.grid(row=6, column=2, padx=padding, pady=padding, sticky='EW')
-        self.button_import.grid(row=6, column=3, padx=padding, pady=padding, sticky='EW')
+        self.button_cancel.grid(row=6, column=3, padx=padding, pady=padding, sticky='EW')
+        self.button_import.grid(row=6, column=4, padx=padding, pady=padding, sticky='EW')
 
-        # Specify which portion to auto-expand
-        self.columnconfigure(0, weight=4)
+        # Specify which column to auto expand
+        self.container.columnconfigure(0, weight=4)
 
         # Place the container frame
         self.container.pack(fill=BOTH)
