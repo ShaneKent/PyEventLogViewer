@@ -12,6 +12,7 @@ from .tag_settings import TagSettings
 from .import_wizard import ImportWizard
 
 import os
+import platform
 
 from winlogtimeline.util.logs import Record
 
@@ -32,6 +33,8 @@ class GUI(Tk):
         self.query_bar = QueryBar(self)
         # self.filter_section = Filters(self)
         self.timeline = None
+        self.enabled = True
+        self.system = platform.system()
 
         self.__disable__()
         self.protocol('WM_DELETE_WINDOW', self.__destroy__)
@@ -140,16 +143,35 @@ class GUI(Tk):
         t = Thread(target=callback)
         t.start()
 
+    @staticmethod
+    def enable_disable_wrapper(_lambda):
+        def decorate(f):
+            def call(*args, **kwargs):
+                if not _lambda(*args).enabled:
+                    _lambda(*args).update_status_bar('Action disabled until project is opened.')
+                    return None
+                else:
+                    return f(*args, **kwargs)
+
+            return call
+
+        return decorate
+
     def __disable__(self):
-        self.toolbar.__disable__()
-        self.query_bar.__disable__()
-        self.menu_bar.__disable__()
+        self.enabled = False
+        if self.system != 'Darwin':
+            self.toolbar.__disable__()
+            self.query_bar.__disable__()
+            # self.filter_section.__disable__()
+            self.menu_bar.__disable__()
 
     def __enable__(self):
-        self.toolbar.__enable__()
-        self.query_bar.__enable__()
-        # self.filter_section.__enable__()
-        self.menu_bar.__enable__()
+        self.enabled = True
+        if self.system != 'Darwin':
+            self.toolbar.__enable__()
+            self.query_bar.__enable__()
+            # self.filter_section.__enable__()
+            self.menu_bar.__enable__()
 
     def __destroy__(self):
         self.close_project()
@@ -311,10 +333,12 @@ class Toolbar(Frame):
         self.import_button.config(state=NORMAL)
         self.format_button.config(state=NORMAL)
 
+    @GUI.enable_disable_wrapper(lambda *args: args[0].master)
     def import_button_function(self):
         wizard = ImportWizard(self)
         wizard.grab_set()
 
+    @GUI.enable_disable_wrapper(lambda *args: args[0].master)
     def format_button_function(self):
         self.master.status_bar.status.config(text='"Format" button pressed.')
         return
@@ -380,6 +404,7 @@ class MenuBar(Menu):
             else:
                 self.master.update_status_bar('Failed to open the project at ' + filename)
 
+    @GUI.enable_disable_wrapper(lambda *args: args[0].master)
     def save_project_function(self, event=None):
         """
         Callback function for File -> Save. Saves the current project.
@@ -389,6 +414,7 @@ class MenuBar(Menu):
         self.master.current_project.save()
         self.master.update_status_bar('Project saved!')
 
+    @GUI.enable_disable_wrapper(lambda *args: args[0].master)
     def color_settings_function(self, event=None):
         """
         Callback function for Tools -> Color Settings. Alters the colors for the current project.
