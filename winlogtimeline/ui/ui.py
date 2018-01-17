@@ -85,6 +85,7 @@ class GUI(Tk):
         if self.current_project.exception is not None:
             self.current_project = None
             return
+        self.winfo_toplevel().title(f'PyEventLogViewer - {self.current_project.get_path().split(os.path.sep)[-1]}')
         self.create_new_timeline()
         self.__enable__()
 
@@ -113,7 +114,12 @@ class GUI(Tk):
 
     @enable_disable_wrapper(lambda *args: args[0])
     def import_function(self, file_name, alias):
-
+        """
+        Function used to kick off the log import process.
+        :param file_name: The path to the file to import.
+        :param alias: A unique alias for the file.
+        :return:
+        """
         def callback():
             # Prepare status bar callback.
             text = '{file}: {status}'.format(file=os.path.basename(file_name), status='{status}')
@@ -209,7 +215,11 @@ class Timeline(Frame):
         self._place_widgets()
 
     def update_tags(self, tags):
-        # Load the tags from the config
+        """
+        Updates the colors associated with record tags.
+        :param tags: The tags to update.
+        :return:
+        """
         for tag, color in tags.items():
             self.tree.tag_configure(tag, background=color)
 
@@ -232,11 +242,20 @@ class Timeline(Frame):
         self.pack(fill='both', expand=True)
 
     def setup_columns(self):
+        """
+        Inserts headers into the timeline.
+        :return:
+        """
         # Set up the columns
         for col in self.headers:
             self.tree.heading(col, text=col.title(), command=lambda _col=col: self.sort_column(_col, False))
 
     def populate_timeline(self, data):
+        """
+        Populates the timeline.
+        :param data: The data to insert into the timeline.
+        :return:
+        """
         # Insert the data
         self.master.update_status_bar('Populating timeline...')
         with self.master.get_progress_bar_context_manager(len(data)) as progress_bar:
@@ -248,6 +267,11 @@ class Timeline(Frame):
         self.master.update_status_bar('Finished populating timeline.')
 
     def update_column_widths(self, data):
+        """
+        Calculates the widths for the columns.
+        :param data: The data to iterate over.
+        :return:
+        """
         known_s_widths = dict()
         known_widths = dict()
         excluded_headers = {'Details', }
@@ -283,6 +307,12 @@ class Timeline(Frame):
             self.tree.column(col, width=self.col_width[col])
 
     def sort_column(self, col, reverse):
+        """
+        Sorts the timeline based on a particular column.
+        :param col: The column to sort.
+        :param reverse: Whether or not to sort in reverse order.
+        :return:
+        """
         column_elements = [(self.tree.set(k, col), k) for k in self.tree.get_children('')]
         column_elements.sort(reverse=reverse)
 
@@ -342,6 +372,11 @@ class StatusBar(Frame):
         self.pack(side=BOTTOM, fill=X)
 
     def update_status(self, message):
+        """
+        Updates the message displayed on the status bar.
+        :param message: The message to display.
+        :return:
+        """
         self.status.config(text=message)
 
 
@@ -359,6 +394,11 @@ class StatusBarContextManager:
         self.parent.progress.grid_forget()
 
     def update_progress(self, steps):
+        """
+        Increments the progress bar.
+        :param steps: The number of steps to increment the progress bar by.
+        :return:
+        """
         self.parent.progress.step(steps)
 
 
@@ -370,9 +410,9 @@ class Toolbar(Frame):
         self.format_photo = PhotoImage(file=util.data.get_package_data_path(__file__, 'icons', 'format.gif'))
 
         self.import_button = Button(self, image=self.import_photo, width='20',
-                                    command=lambda: self.import_button_function())
+                                    command=self.master.menu_bar.import_button_function)
         self.format_button = Button(self, image=self.format_photo, width='20',
-                                    command=lambda: self.format_button_function())
+                                    command=self.master.menu_bar.format_button_function)
 
         self.import_button.pack()
         self.format_button.pack()
@@ -386,16 +426,6 @@ class Toolbar(Frame):
     def __enable__(self):
         self.import_button.config(state=NORMAL)
         self.format_button.config(state=NORMAL)
-
-    @enable_disable_wrapper(lambda *args: args[0].master)
-    def import_button_function(self):
-        wizard = ImportWindow(self)
-        wizard.grab_set()
-
-    @enable_disable_wrapper(lambda *args: args[0].master)
-    def format_button_function(self):
-        self.master.status_bar.status.config(text='"Format" button pressed.')
-        return
 
 
 class MenuBar(Menu):
@@ -427,6 +457,8 @@ class MenuBar(Menu):
         self.add_cascade(label='Tools', menu=self.tool_menu, underline=0)
         # Tools -> Timeline Colors
         self.tool_menu.add_command(label='Timeline Colors', command=self.color_settings_function, underline=0)
+        # Tools -> Import Log
+        self.tool_menu.add_command(label='Import Log File', command=self.import_button_function, underline=0)
 
     def new_project_function(self, event=None):
         """
@@ -473,19 +505,38 @@ class MenuBar(Menu):
     @enable_disable_wrapper(lambda *args: args[0].master)
     def color_settings_function(self, event=None):
         """
-        Callback function for Tools -> Color Settings. Alters the colors for the current project.
+        Callback function for Tools -> Timeline Colors. Alters the colors for the current project.
         :param event: A click or key press event.
         :return:
         """
         self.master.open_color_settings()
 
+    @enable_disable_wrapper(lambda *args: args[0].master)
+    def import_button_function(self, event=None):
+        """
+        Callback function for Tools -> Import Log File. Launches the log file import window.
+        :return:
+        """
+        wizard = ImportWindow(self)
+        wizard.grab_set()
+
+    @enable_disable_wrapper(lambda *args: args[0].master)
+    def format_button_function(self, event=None):
+        """
+        TODO: Determine whether or not this function and associated button are necessary.
+        :param event:
+        :return:
+        """
+        self.master.status_bar.status.config(text='"Format" button pressed.')
+        return
+
     def __enable__(self):
-        # self.tool_menu.config('Color Settings', state=NORMAL)
         self.entryconfig('Tools', state=NORMAL)
+        self.file_menu.entryconfig('Save', state=NORMAL)
 
     def __disable__(self):
-        # self.tool_menu.config('Color Settings', state=DISABLED)
         self.entryconfig('Tools', state=DISABLED)
+        self.file_menu.entryconfig('Save', state=DISABLED)
 
 
 class Filters(Frame):
