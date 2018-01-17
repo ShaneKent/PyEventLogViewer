@@ -10,7 +10,7 @@ from hashlib import md5
 
 # Note: It may be useful to take config out of this whole equation. Config could store the default filter configuration,
 # and that could be copied into the project config to allow user modifications.
-def import_log(log_file, alias, project, config, status_callback):
+def import_log(log_file, alias, project, config, status_callback, progress_context_manager):
     """
     Main routine to import an event log file.
     :param log_file: A path to an event log file.
@@ -18,6 +18,8 @@ def import_log(log_file, alias, project, config, status_callback):
     :param project: A project instance.
     :param config: A config dictionary.
     :param status_callback: A function to relay status info the the GUI. Should accept status as a string.
+    :param progress_context_manager: A function that takes a max_value and returns a context manager used for updating
+        the progress bar.
     :return: None
     """
 
@@ -32,18 +34,19 @@ def import_log(log_file, alias, project, config, status_callback):
     records = collect_records(log)  # + collect_deleted_records(log)
     xml_records = xml_convert(records, file_hash)
 
-    status_callback('All records converted to XML format. Parsed {} records.'.format(0))
+    status_callback('Parsing records...')
 
-    i = 0
-    for record in xml_records:
-        # Write records to the sqlite db.
-        project.write_log_data(Record(**record))
-        i += 1
+    with progress_context_manager(log.get_number_of_records()) as progress_bar:
+        for i, record in enumerate(xml_records):
+            # Write records to the sqlite db.
+            if record is not None:
+                project.write_log_data(Record(**record))
 
-        # Update the status bar so we know that things are happening.
-        if i % 10 == 0:
-            status_callback('Records converted to XML format. Parsed {} records.'.format(i))
+            # Update the status bar so we know that things are happening.
+            if i % 100 == 0:
+                progress_bar.update_progress(100)
 
+    status_callback('Finished parsing records')
     # Write project information to the sqlite db.
     project.write_verification_data(file_hash, log_file, alias)
 
@@ -75,8 +78,7 @@ def xml_convert(records, file_hash, recovered=True):
             'source_file_hash': file_hash
         })
 
-        if dictionary != None:
-            yield dictionary
+        yield dictionary
 
 
 def collect_records(event_file):

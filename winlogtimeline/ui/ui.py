@@ -2,19 +2,29 @@ from tkinter import *
 from tkinter import messagebox, filedialog
 from tkinter import font
 from tkinter.ttk import *
-
 from threading import Thread
 from winlogtimeline import util
 from winlogtimeline import collector
-
+from winlogtimeline.util.logs import Record
 from .new_project import NewProject
 from .tag_settings import TagSettings
 from .import_wizard import ImportWizard
-
 import os
 import platform
 
-from winlogtimeline.util.logs import Record
+
+def enable_disable_wrapper(_lambda):
+    def decorate(f):
+        def call(*args, **kwargs):
+            if not _lambda(*args).enabled:
+                _lambda(*args).update_status_bar('Action disabled until project is opened.')
+                return None
+            else:
+                return f(*args, **kwargs)
+
+        return call
+
+    return decorate
 
 
 class GUI(Tk):
@@ -40,7 +50,10 @@ class GUI(Tk):
         self.protocol('WM_DELETE_WINDOW', self.__destroy__)
 
     def update_status_bar(self, text):
-        self.status_bar.status.config(text=text)
+        self.status_bar.update_status(text)
+
+    def get_progress_bar_context_manager(self, max_value):
+        return StatusBarContextManager(self.status_bar, max_value)
 
     def create_project(self):
         window = NewProject(self)
@@ -86,6 +99,7 @@ class GUI(Tk):
             self.timeline.pack_forget()
             self.timeline = None
 
+    @enable_disable_wrapper(lambda *args: args[0])
     def import_function(self, file_name, alias):
 
         def callback():
@@ -94,7 +108,8 @@ class GUI(Tk):
 
             # Start the import log process.
             collector.import_log(file_name, alias, self.current_project, '',
-                                 lambda s: self.update_status_bar(text.format(status=s)))
+                                 lambda s: self.update_status_bar(text.format(status=s)),
+                                 self.get_progress_bar_context_manager)
 
             # Create or update the timeline.
             self.create_new_timeline()
@@ -142,20 +157,6 @@ class GUI(Tk):
 
         t = Thread(target=callback)
         t.start()
-
-    @staticmethod
-    def enable_disable_wrapper(_lambda):
-        def decorate(f):
-            def call(*args, **kwargs):
-                if not _lambda(*args).enabled:
-                    _lambda(*args).update_status_bar('Action disabled until project is opened.')
-                    return None
-                else:
-                    return f(*args, **kwargs)
-
-            return call
-
-        return decorate
 
     def __disable__(self):
         self.enabled = False
@@ -224,11 +225,14 @@ class Timeline(Frame):
 
     def populate_timeline(self, data):
         # Insert the data
-        for i, row in enumerate(data):
-            if not i % 100:
-                self.master.update_status_bar('{} records ready to render.'.format(i))
-            # TODO: Change the tags to use event source and event id instead of just event id
-            self.tree.insert('', 'end', values=row, tags=str(row[1]))
+        self.master.update_status_bar('Populating timeline...')
+        with self.master.get_progress_bar_context_manager(len(data)) as progress_bar:
+            for i, row in enumerate(data):
+                # TODO: Change the tags to use event source and event id instead of just event id
+                self.tree.insert('', 'end', values=row, tags=str(row[1]))
+                if not i % 100:
+                    progress_bar.update_progress(100)
+        self.master.update_status_bar('Finished populating timeline.')
 
     def update_column_widths(self, data):
         known_s_widths = dict()
@@ -237,24 +241,31 @@ class Timeline(Frame):
         measurement_font = font.Font()
 
         # Determine the column widths
-        self.master.update_status_bar("Determining the column widths.")
-        for j, row in enumerate(data):
-            if not j % 100:
-                self.master.update_status_bar('Prepared information for {} records.'.format(j))
+        self.master.update_status_bar("Calculating the column widths...")
+        with self.master.get_progress_bar_context_manager(len(data)) as progress_bar:
+            for j, row in enumerate(data):
+                # Update the column widths
+                for i, v in enumerate(row):
+                    if self.headers[i] in excluded_headers:
+                        continue
+                    if type(v) is str:
+                        if len(v) not in known_s_widths:
+                            known_s_widths[len(v)] = measurement_font.measure(v)
+                        width = known_s_widths[len(v)]
+                    else:
+                        if v not in known_widths:
+                            known_widths[v] = measurement_font.measure(v)
+                        width = known_widths[v]
+                    if width > self.col_width[self.headers[i]]:
+                        self.col_width[self.headers[i]] = width
 
-            for i, v in enumerate(row):
-                if self.headers[i] in excluded_headers:
-                    continue
-                if type(v) is str:
-                    if len(v) not in known_s_widths:
-                        known_s_widths[len(v)] = measurement_font.measure(v)
-                    width = known_s_widths[len(v)]
-                else:
-                    if v not in known_widths:
-                        known_widths[v] = measurement_font.measure(v)
-                    width = known_widths[v]
-                if width > self.col_width[self.headers[i]]:
-                    self.col_width[self.headers[i]] = width
+                # Update the progress bar
+                if not j % 100:
+                    progress_bar.update_progress(100)
+
+        self.master.update_status_bar('Finished calculating column widths.')
+
+        # Updating the column widths
         for col in self.headers:
             self.tree.column(col, width=self.col_width[col])
 
@@ -285,8 +296,7 @@ class QueryBar(Frame):
         self.drop_down.pack(side=LEFT)
 
         # -- REMOVE WHEN NOT NEEDED. Only for prototyping reasons.
-
-        self.button = Button(self, text="Query", command=lambda: collector.filter_logs(None, None, None))
+        self.button = Button(self, text="Query", command=lambda: None)  # collector.filter_logs(None, None, None))
         self.button.pack(side=LEFT)
         # --
 
@@ -299,13 +309,44 @@ class QueryBar(Frame):
         self.drop_down.config(state=NORMAL)
 
 
-class StatusBar(Label):
-    def __init__(self, parent, *args, **kwargs):
-        super().__init__(parent)
-        self.status = Label(parent, text='Notice: Create a new project or open an existing project to get started.',
-                            borderwidth=1, relief=SUNKEN, anchor=W, *args,
-                            **kwargs)
-        self.status.pack(side=BOTTOM, fill=X)
+class StatusBar(Frame):
+    def __init__(self, parent):
+        super().__init__(parent, relief=SUNKEN)
+
+        self.progress = None
+        self._init_widgets()
+        self._place_widgets()
+
+    def _init_widgets(self):
+        self.status = Label(self, text='Notice: Create a new project or open an existing project to get started.',
+                            anchor=W)
+
+    def _place_widgets(self):
+        padding = 2
+        self.status.grid(row=0, column=0, padx=padding, pady=padding, sticky='W')
+        # self.progress.grid(row=0, column=1, padx=padding, pady=padding, sticky='E')
+        self.columnconfigure(0, weight=4)
+        self.pack(side=BOTTOM, fill=X)
+
+    def update_status(self, message):
+        self.status.config(text=message)
+
+
+class StatusBarContextManager:
+    def __init__(self, parent, max_value):
+        self.parent = parent
+        self.max_value = max_value
+
+    def __enter__(self):
+        self.parent.progress = Progressbar(self.parent, length=200, maximum=self.max_value, mode='determinate')
+        self.parent.progress.grid(row=0, column=1, padx=2, pady=2, sticky='E')
+        return self
+
+    def __exit__(self, *args):
+        self.parent.progress.grid_forget()
+
+    def update_progress(self, steps):
+        self.parent.progress.step(steps)
 
 
 class Toolbar(Frame):
@@ -333,12 +374,12 @@ class Toolbar(Frame):
         self.import_button.config(state=NORMAL)
         self.format_button.config(state=NORMAL)
 
-    @GUI.enable_disable_wrapper(lambda *args: args[0].master)
+    @enable_disable_wrapper(lambda *args: args[0].master)
     def import_button_function(self):
         wizard = ImportWizard(self)
         wizard.grab_set()
 
-    @GUI.enable_disable_wrapper(lambda *args: args[0].master)
+    @enable_disable_wrapper(lambda *args: args[0].master)
     def format_button_function(self):
         self.master.status_bar.status.config(text='"Format" button pressed.')
         return
@@ -404,7 +445,7 @@ class MenuBar(Menu):
             else:
                 self.master.update_status_bar('Failed to open the project at ' + filename)
 
-    @GUI.enable_disable_wrapper(lambda *args: args[0].master)
+    @enable_disable_wrapper(lambda *args: args[0].master)
     def save_project_function(self, event=None):
         """
         Callback function for File -> Save. Saves the current project.
@@ -412,9 +453,9 @@ class MenuBar(Menu):
         :return:
         """
         self.master.current_project.save()
-        self.master.update_status_bar('Project saved!')
+        self.master.update_status_bar('Project saved')
 
-    @GUI.enable_disable_wrapper(lambda *args: args[0].master)
+    @enable_disable_wrapper(lambda *args: args[0].master)
     def color_settings_function(self, event=None):
         """
         Callback function for Tools -> Color Settings. Alters the colors for the current project.
