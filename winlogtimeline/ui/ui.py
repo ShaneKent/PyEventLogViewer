@@ -6,6 +6,7 @@ from threading import Thread
 from winlogtimeline import util
 from winlogtimeline import collector
 from winlogtimeline.util.logs import Record
+from winlogtimeline.util.export import Export
 from .new_project import NewProject
 from .tag_settings import TagSettings
 from .import_window import ImportWindow
@@ -407,25 +408,25 @@ class Toolbar(Frame):
         super().__init__(parent, borderwidth=1, relief=SUNKEN, **kwargs)
 
         self.import_photo = PhotoImage(file=util.data.get_package_data_path(__file__, 'icons', 'import.gif'))
-        self.format_photo = PhotoImage(file=util.data.get_package_data_path(__file__, 'icons', 'format.gif'))
+        self.export_photo = PhotoImage(file=util.data.get_package_data_path(__file__, 'icons', 'export.gif'))
 
         self.import_button = Button(self, image=self.import_photo, width='20',
                                     command=self.master.menu_bar.import_button_function)
-        self.format_button = Button(self, image=self.format_photo, width='20',
-                                    command=self.master.menu_bar.format_button_function)
+        self.export_button = Button(self, image=self.export_photo, width='20',
+                                    command=self.master.menu_bar.export_button_function)
 
         self.import_button.pack()
-        self.format_button.pack()
+        self.export_button.pack()
 
         self.pack(side=LEFT, fill=Y)
 
     def __disable__(self):
         self.import_button.config(state=DISABLED)
-        self.format_button.config(state=DISABLED)
+        self.export_button.config(state=DISABLED)
 
     def __enable__(self):
         self.import_button.config(state=NORMAL)
-        self.format_button.config(state=NORMAL)
+        self.export_button.config(state=NORMAL)
 
 
 class MenuBar(Menu):
@@ -452,6 +453,11 @@ class MenuBar(Menu):
                                    accelerator='Ctrl+S')
         parent.bind('<Control-s>', self.save_project_function)
 
+        # File -> Export
+        self.file_menu.add_command(label="Export Timeline", command=self.export_button_function, underline=0,
+                                   accelerator='Ctrl+E')
+        parent.bind('<Control-e>', self.export_button_function)
+
         # Tools
         self.tool_menu = Menu(self, **kwargs)
         self.add_cascade(label='Tools', menu=self.tool_menu, underline=0)
@@ -459,6 +465,7 @@ class MenuBar(Menu):
         self.tool_menu.add_command(label='Timeline Colors', command=self.color_settings_function, underline=0)
         # Tools -> Import Log
         self.tool_menu.add_command(label='Import Log File', command=self.import_button_function, underline=0)
+
 
     def new_project_function(self, event=None):
         """
@@ -521,14 +528,13 @@ class MenuBar(Menu):
         wizard.grab_set()
 
     @enable_disable_wrapper(lambda *args: args[0].master)
-    def format_button_function(self, event=None):
+    def export_button_function(self, event=None):
         """
         TODO: Determine whether or not this function and associated button are necessary.
         :param event:
         :return:
         """
-        self.master.status_bar.status.config(text='"Format" button pressed.')
-        return
+        Export(self.master.current_project)
 
     def __enable__(self):
         self.entryconfig('Tools', state=NORMAL)
