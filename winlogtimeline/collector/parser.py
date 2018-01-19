@@ -120,11 +120,12 @@ def parse_id_42(raw, record):
 
 
 def parse_id_104(raw, record):
-    data = raw["Event"]["EventData"]["Data"]
+    data = raw["Event"]["UserData"]["LogFileCleared"]
 
-    record["account"] = data[0]["#text"]
+    record["account"] = data["SubjectUserName"]
     record["description"] = "Log Cleared"
-    record["details"] = f'System event log was cleared by the following account: {data[1]["#text"]}\\{data[0]["#text"]}'
+    record[
+        "details"] = f'System event log was cleared by the following account: {data["SubjectDomainName"]}\\{data["Channel"]}'
 
     return record
 
