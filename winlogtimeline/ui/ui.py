@@ -6,10 +6,10 @@ from threading import Thread
 from winlogtimeline import util
 from winlogtimeline import collector
 from winlogtimeline.util.logs import Record
-from winlogtimeline.util.export import Export
 from .new_project import NewProject
 from .tag_settings import TagSettings
 from .import_window import ImportWindow
+from .export_timeline import ExportWindow
 import os
 import platform
 
@@ -18,7 +18,7 @@ def enable_disable_wrapper(_lambda):
     def decorate(f):
         def call(*args, **kwargs):
             if not _lambda(*args).enabled:
-                _lambda(*args).update_status_bar('Action disabled until project is opened.')
+                _lambda(*args).update_status_bar('Notice: The selected action is disabled until a project is opened.')
                 return None
             else:
                 return f(*args, **kwargs)
@@ -534,7 +534,9 @@ class MenuBar(Menu):
         :param event:
         :return:
         """
-        Export(self.master.current_project)
+        print(self.master.current_project)
+        wizard = ExportWindow(self, self.master.current_project)
+        wizard.grab_set()
 
     def __enable__(self):
         self.entryconfig('Tools', state=NORMAL)
