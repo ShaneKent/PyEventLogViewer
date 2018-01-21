@@ -467,11 +467,11 @@ class MenuBar(Menu):
         self.help_menu = Menu(self, **kwargs)
         self.add_cascade(label='Help', menu=self.help_menu, underline=0)
         # Help -> About
-        self.help_menu.add_command(label='About', command=self.about_function, underline=0, accelerator='Ctrl+A')
+        self.help_menu.add_command(label='About', command=self.about_function, underline=0)
         # Help -> License
-        self.help_menu.add_command(label='License', command=self.license_function, underline=0, accelerator='Ctrl+L')
+        self.help_menu.add_command(label='License', command=self.license_function, underline=0)
         # Help -> Contact
-        self.help_menu.add_command(label='Contact', command=self.contact_function, underline=0, accelerator='Ctrl+C')
+        self.help_menu.add_command(label='Contact', command=self.contact_function, underline=0)
 
     def new_project_function(self, event=None):
         """

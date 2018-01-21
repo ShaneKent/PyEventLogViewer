@@ -27,18 +27,21 @@ class HelpWindow(Toplevel):
                                   "their BS in Computer Engineering from Cal Poly, San Luis Obispo.\n\n"
                                   "Version W.X.Y.Z")
             self.repo_link.grid_forget()
+            self.email_link.grid_forget()
         elif type == "license":
             self.title('License')
             self.text.config(text='License info here.')
             self.repo_link.grid_forget()
+            self.email_link.grid_forget()
         elif type == "contact":
             self.title("Contact")
             self.text.config(text="If you have any questions, concerns, or issues you can contact\n"
-                                  "the developers of this project by emailing pyeventlogviewer@gmail.com\n"
+                                  "the developers of this project by emailing the project team\n"
                                   "or by visiting the project repository here:")
 
             from webbrowser import open_new
             self.repo_link.bind("<Button-1>", lambda callback: open_new(self.repo_link.cget("text")))
+            self.email_link.bind("<Button-1>", lambda callback: open_new("mailto:" + self.email_link.cget("text")))
 
     def _init_widgets(self):
         """
@@ -53,7 +56,9 @@ class HelpWindow(Toplevel):
         self.text = Label(self.main_container)
         self.repo_link = Label(self.main_container, text="https://github.com/ShaneKent/PyEventLogViewer/",
                                foreground='blue',
-                               cursor='hand2')
+                               cursor='hand2', anchor=CENTER)
+        self.email_link = Label(self.main_container, text="pyeventlogviewer@gmail.com",
+                                foreground='blue', cursor='hand2', anchor=CENTER)
 
         # Action block
         self.button_ok = Button(self.main_container, text='Ok', underline=0, command=self.destroy)
@@ -68,12 +73,13 @@ class HelpWindow(Toplevel):
 
         # Workspace block
         self.main_container.columnconfigure(0, weight=4)
-        self.main_container.grid(row=0, column=0, rowspan=3, columnspan=5, sticky='EW')
+        self.main_container.grid(row=0, column=0, rowspan=4, columnspan=5, sticky='EW')
 
         # Information block
         self.text.grid(row=1, column=0, padx=padding, pady=padding, sticky='NESW')
         self.repo_link.grid(row=2, column=0, padx=padding, sticky='NEW')
-        self.button_ok.grid(row=3, column=0, padx=padding, pady=padding, sticky='NESW')
+        self.email_link.grid(row=3, column=0, padx=padding, sticky='NEW')
+        self.button_ok.grid(row=4, column=0, padx=padding, pady=padding, sticky='NESW')
 
         # Specify which portion to auto-expand
         self.container.columnconfigure(0, weight=4)
