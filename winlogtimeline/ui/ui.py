@@ -534,17 +534,18 @@ class MenuBar(Menu):
         :param event:
         :return:
         """
-        print(self.master.current_project)
         wizard = ExportWindow(self, self.master.current_project)
         wizard.grab_set()
 
     def __enable__(self):
         self.entryconfig('Tools', state=NORMAL)
         self.file_menu.entryconfig('Save', state=NORMAL)
+        self.file_menu.entryconfig('Export Timeline', state=NORMAL)
 
     def __disable__(self):
         self.entryconfig('Tools', state=DISABLED)
         self.file_menu.entryconfig('Save', state=DISABLED)
+        self.file_menu.entryconfig('Export Timeline', state=DISABLED)
 
 
 class Filters(Frame):

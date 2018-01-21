@@ -181,35 +181,17 @@ class ExportWindow(Toplevel):
             header = [key for key in columns if columns[key] == 1]
             w.writerow(header)
 
-            for record in records:
-                row = []
+            booleans = [columns[key] for key in columns]
 
-                if columns["Timestamp (UTC)"]:
-                    row.append(record.timestamp_utc)
-                if columns["Event ID"]:
-                    row.append(record.event_id)
-                if columns["Description"]:
-                    row.append(record.decription)
-                if columns["Details"]:
-                    row.append(record.details)
-                if columns["Event Source"]:
-                    row.append(record.event_source)
-                if columns["Event Log"]:
-                    row.append(record.event_log)
-                if columns["Session ID"]:
-                    row.append(record.session_id)
-                if columns["Account"]:
-                    row.append(record.account)
-                if columns["Computer Name"]:
-                    row.append(record.computer_name)
-                if columns["Record Number"]:
-                    row.append(record.record_number)
-                if columns["Recovered"]:
-                    row.append(record.recovered)
-                if columns["Source File Hash"]:
-                    row.append(record.source_file_hash)
+            from itertools import compress
+            for r in records:
+                values = [r.timestamp_utc, r.event_id, r.description, r.details, r.event_source, r.event_log,
+                          r.session_id, r.account, r.computer_name, r.record_number, r.recovered, r.source_file_hash]
+                row = list(compress(values, booleans))
 
                 w.writerow(row)
+
+        self.master.master.update_status_bar("Successfully exported timeline in the current project directory!")
 
         self.destroy()
 
