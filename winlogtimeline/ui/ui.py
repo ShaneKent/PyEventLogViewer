@@ -457,8 +457,7 @@ class MenuBar(Menu):
         self.tool_menu = Menu(self, **kwargs)
         self.add_cascade(label='Tools', menu=self.tool_menu, underline=0)
         # Tools -> Timeline Colors
-        self.tool_menu.add_command(label='Timeline Colors', command=self.color_settings_function, underline=0,
-                                   accelerator='Ctrl+C')
+        self.tool_menu.add_command(label='Timeline Colors', command=self.color_settings_function, underline=0)
         # Tools -> Import Log
         self.tool_menu.add_command(label='Import Log File', command=self.import_button_function, underline=0,
                                    accelerator='Ctrl+I')
