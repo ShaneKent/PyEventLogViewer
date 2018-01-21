@@ -10,6 +10,7 @@ from .new_project import NewProject
 from .tag_settings import TagSettings
 from .import_window import ImportWindow
 from .help_window import HelpWindow
+from .export_timeline import ExportWindow
 import os
 import platform
 
@@ -18,7 +19,7 @@ def enable_disable_wrapper(_lambda):
     def decorate(f):
         def call(*args, **kwargs):
             if not _lambda(*args).enabled:
-                _lambda(*args).update_status_bar('Action disabled until project is opened.')
+                _lambda(*args).update_status_bar('Notice: The selected action is disabled until a project is opened.')
                 return None
             else:
                 return f(*args, **kwargs)
@@ -408,25 +409,25 @@ class Toolbar(Frame):
         super().__init__(parent, borderwidth=1, relief=SUNKEN, **kwargs)
 
         self.import_photo = PhotoImage(file=util.data.get_package_data_path(__file__, 'icons', 'import.gif'))
-        self.format_photo = PhotoImage(file=util.data.get_package_data_path(__file__, 'icons', 'format.gif'))
+        self.export_photo = PhotoImage(file=util.data.get_package_data_path(__file__, 'icons', 'export.gif'))
 
         self.import_button = Button(self, image=self.import_photo, width='20',
                                     command=self.master.menu_bar.import_button_function)
-        self.format_button = Button(self, image=self.format_photo, width='20',
-                                    command=self.master.menu_bar.format_button_function)
+        self.export_button = Button(self, image=self.export_photo, width='20',
+                                    command=self.master.menu_bar.export_button_function)
 
         self.import_button.pack()
-        self.format_button.pack()
+        self.export_button.pack()
 
         self.pack(side=LEFT, fill=Y)
 
     def __disable__(self):
         self.import_button.config(state=DISABLED)
-        self.format_button.config(state=DISABLED)
+        self.export_button.config(state=DISABLED)
 
     def __enable__(self):
         self.import_button.config(state=NORMAL)
-        self.format_button.config(state=NORMAL)
+        self.export_button.config(state=NORMAL)
 
 
 class MenuBar(Menu):
@@ -453,6 +454,11 @@ class MenuBar(Menu):
                                    accelerator='Ctrl+S')
         parent.bind('<Control-s>', self.save_project_function)
 
+        # File -> Export
+        self.file_menu.add_command(label="Export Timeline", command=self.export_button_function, underline=0,
+                                   accelerator='Ctrl+E')
+        parent.bind('<Control-e>', self.export_button_function)
+
         # Tools
         self.tool_menu = Menu(self, **kwargs)
         self.add_cascade(label='Tools', menu=self.tool_menu, underline=0)
@@ -472,6 +478,7 @@ class MenuBar(Menu):
         self.help_menu.add_command(label='License', command=self.license_function, underline=0)
         # Help -> Contact
         self.help_menu.add_command(label='Contact', command=self.contact_function, underline=0)
+
 
     def new_project_function(self, event=None):
         """
@@ -534,14 +541,14 @@ class MenuBar(Menu):
         wizard.grab_set()
 
     @enable_disable_wrapper(lambda *args: args[0].master)
-    def format_button_function(self, event=None):
+    def export_button_function(self, event=None):
         """
         TODO: Determine whether or not this function and associated button are necessary.
         :param event:
         :return:
         """
-        self.master.status_bar.status.config(text='"Format" button pressed.')
-        return
+        wizard = ExportWindow(self, self.master.current_project)
+        wizard.grab_set()
 
     def about_function(self, event=None):
         """
@@ -570,10 +577,12 @@ class MenuBar(Menu):
     def __enable__(self):
         self.entryconfig('Tools', state=NORMAL)
         self.file_menu.entryconfig('Save', state=NORMAL)
+        self.file_menu.entryconfig('Export Timeline', state=NORMAL)
 
     def __disable__(self):
         self.entryconfig('Tools', state=DISABLED)
         self.file_menu.entryconfig('Save', state=DISABLED)
+        self.file_menu.entryconfig('Export Timeline', state=DISABLED)
 
 
 class Filters(Frame):
