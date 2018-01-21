@@ -2,6 +2,7 @@ from tkinter import *
 from tkinter import filedialog, messagebox
 from tkinter.ttk import *
 from winlogtimeline.util.logs import Record
+import os
 
 
 class ExportWindow(Toplevel):
@@ -32,12 +33,21 @@ class ExportWindow(Toplevel):
 
         # File Name
         self.file_name = StringVar()
-        self.file_label = Label(self.work_container, text='Export Name:')
-        self.file_path = Entry(self.work_container, width=30, textvariable=self.file_name)
+        self.file_name.trace('w', lambda *args: self.callback_update_path())
+        self.file_label = Label(self.work_container, text='File Name:')
+        self.file_entry = Entry(self.work_container, textvariable=self.file_name)
+
+        self.path_name = StringVar()
+        self.path_name.set(os.path.abspath(self.current_project.get_path()))
+        self.path_label = Label(self.work_container, text='File Path:')
+        self.path_entry = Entry(self.work_container, textvariable=self.path_name)
+        self.path_button = Button(self.work_container, width=3, text='...', command=self.callback_path_prompt)
+
+        self.file_overwrite = Label(self.work_container, text='Warning:')
 
         # File Type
         self.type_label = Label(self.work_container, text='Type:')
-        self.type_list = ['- Export File Type -', '.csv <Comma-Separated Vales>']
+        self.type_list = ['.csv <Comma-Separated Vales>', '.csv <Comma-Separated Vales>']
         self.type_string = StringVar()
         self.type_string.set(self.type_list[0])
         self.type = OptionMenu(self.work_container, self.type_string, *self.type_list, command=self.display_settings)
@@ -75,14 +85,24 @@ class ExportWindow(Toplevel):
         i = 0
 
         # Workspace block
-        self.file_label.grid(row=i, column=0, padx=padding, sticky='NES')
-        self.file_path.grid(row=i, column=1, columnspan=2, padx=padding, pady=padding, sticky='NESW')
+        self.file_label.grid(row=i, column=0, columnspan=1, padx=padding, sticky='NES')
+        self.file_entry.grid(row=i, column=1, columnspan=4, padx=padding, pady=padding, sticky='NESW')
+        i += 1
+
+        self.path_label.grid(row=i, column=0, padx=padding, sticky='NES')
+        self.path_entry.grid(row=i, column=1, columnspan=2, padx=padding, pady=padding, sticky='NESW')
+        self.path_button.grid(row=i, column=4, columnspan=1, padx=padding, pady=padding, sticky='NESW')
+        i += 1
+
+        self.overwrite_row = i
+        self.file_overwrite.grid(row=i, column=1, columnspan=2, padx=padding, pady=padding, sticky='NEW')
         i += 1
 
         self.type_label.grid(row=i, column=0, padx=padding, sticky='NES')
         self.type.grid(row=i, column=1, columnspan=2, padx=padding, pady=padding, sticky='NESW')
         i += 1
 
+        self.delimiter_row = i
         self.delimiter_label.grid(row=i, column=0, padx=padding, sticky='NES')
         self.delimiter.grid(row=i, column=1, columnspan=2, padx=padding, pady=padding, sticky='NESW')
         i += 1
@@ -105,13 +125,12 @@ class ExportWindow(Toplevel):
         i += 1
 
         self.work_container.columnconfigure(0, weight=4)
-        self.work_container.grid(row=0, column=0, columnspan=5, rowspan=3, sticky='EW')
+        self.work_container.grid(row=0, column=0, columnspan=5, rowspan=12, sticky='NW')
 
         self.container.columnconfigure(0, weight=4)
         self.container.pack(fill=BOTH)
 
-        self.delimiter_label.grid_forget()
-        self.delimiter.grid_forget()
+        self.file_overwrite.grid_forget()
         self.export_button.config(state=DISABLED)
 
     def display_settings(self, option):
@@ -124,14 +143,45 @@ class ExportWindow(Toplevel):
         file_extension = option.split(" ")[0]
 
         if file_extension == ".csv":
-            self.delimiter_label.grid(row=2, column=0, padx=padding, sticky='NES')
-            self.delimiter.grid(row=2, column=1, columnspan=1, padx=padding, pady=padding, sticky='NESW')
-            self.export_button.config(state=NORMAL)
+            self.delimiter_label.grid(row=self.delimiter_row, column=0, padx=padding, sticky='NES')
+            self.delimiter.grid(row=self.delimiter_row, column=1, columnspan=1, padx=padding, pady=padding,
+                                sticky='NESW')
 
         elif file_extension == ".pdf":
             self.delimiter_label.grid_forget()
             self.delimiter.grid_forget()
+
+    def callback_path_prompt(self):
+        """
+        Callback used to kick off a directory selection prompt.
+        :return:
+        """
+        workspace = filedialog.askdirectory()
+        if len(workspace) > 0:
+            self.path_name.set(os.path.abspath(workspace))
+
+    def callback_update_path(self):
+        """
+        Callback used when either the workspace or title entry widgets are modified. Updates the value of the path entry
+        widget.
+        :return:
+        """
+        file_type = self.type_string.get().split(" ")[0]
+        # Update the project path and ensure that the path is valid.
+        file = os.path.join(os.path.abspath(self.path_name.get()), self.file_name.get() + file_type)
+
+        if os.path.isfile(file):
+            self.file_overwrite.grid(row=self.overwrite_row, column=0, columnspan=5, padx=3, pady=3, sticky='NESW')
+            self.file_overwrite.config(
+                text="Warning: A file named '{}{}' at the current location already exists.\nIt may be overwritten.".format(
+                    self.file_name.get(), file_type), foreground="red", anchor=CENTER)
+        else:
+            self.file_overwrite.grid_forget()
+
+        if len(self.file_name.get()) > 0:
             self.export_button.config(state=NORMAL)
+        else:
+            self.export_button.config(state=DISABLED)
 
     def export(self):
         """
@@ -140,13 +190,13 @@ class ExportWindow(Toplevel):
         """
         columns = {pair[1].cget("text"): pair[0].get() for pair in self.columns}
 
-        if self.file_path.get() == "":
+        if self.file_name.get() == "":
             messagebox.showerror("Error", "Please provide a valid filename for the exported file.")
             return
-        elif '.' in self.file_path.get():
+        elif '.' in self.file_name.get():
             messagebox.showerror("Error",
                                  "Please provide a valid filename without an extension.\nInstead of '{}' you can use '{}'".format(
-                                     self.file_path.get(), self.file_path.get().split(".")[0]))
+                                     self.file_name.get(), self.file_name.get().split(".")[0]))
             return
 
         type = self.type_string.get().split(" ")[0]
@@ -175,7 +225,7 @@ class ExportWindow(Toplevel):
 
         from csv import writer
 
-        with open(self.current_project.get_path() + '/{}.csv'.format(self.file_path.get()), 'w') as csvfile:
+        with open(self.current_project.get_path() + '/{}.csv'.format(self.file_name.get()), 'w') as csvfile:
             w = writer(csvfile, delimiter=delimiter, quoting=0)  # quoting == minimal quoting
 
             header = [key for key in columns if columns[key] == 1]
