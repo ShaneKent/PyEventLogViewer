@@ -32,7 +32,7 @@ def import_log(log_file, alias, project, config, status_callback, progress_conte
     # Open the file with pyevtx and parse.
     log = pyevtx.open(log_file)
     records = collect_records(log)  # + collect_deleted_records(log)
-    xml_records = xml_convert(records, file_hash)
+    xml_records = xml_convert(records, alias)
 
     status_callback('Parsing records...')
 
@@ -53,7 +53,7 @@ def import_log(log_file, alias, project, config, status_callback, progress_conte
     return
 
 
-def xml_convert(records, file_hash, recovered=True):
+def xml_convert(records, source_file_alias, recovered=True):
     for record in records:
         try:
             d = xmltodict.parse(record)
@@ -75,7 +75,7 @@ def xml_convert(records, file_hash, recovered=True):
             'computer_name': sys['Computer'],
             'record_number': sys['EventRecordID'],
             'recovered': recovered,
-            'source_file_hash': file_hash
+            'alias': source_file_alias
         })
 
         yield dictionary

@@ -236,7 +236,7 @@ class ExportWindow(Toplevel):
             from itertools import compress
             for r in records:
                 values = [r.timestamp_utc, r.event_id, r.description, r.details, r.event_source, r.event_log,
-                          r.session_id, r.account, r.computer_name, r.record_number, r.recovered, r.source_file_hash]
+                          r.session_id, r.account, r.computer_name, r.record_number, r.recovered, r.source_file_alias]
                 row = list(compress(values, booleans))
 
                 w.writerow(row)
