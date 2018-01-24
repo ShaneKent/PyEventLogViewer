@@ -15,20 +15,21 @@ class Record:
         self.computer_name = kwargs['computer_name']
         self.record_number = kwargs['record_number']
         self.recovered = kwargs['recovered']
-        self.source_file_hash = kwargs['source_file_hash']
+        self.source_file_alias = kwargs['alias']
         self.record_hash = self.__hash__()
 
     def get_tuple(self):
         return (
             self.timestamp_utc, self.event_id, self.description, self.details, self.event_source, self.event_log,
-            self.session_id, self.account, self.computer_name, self.record_number, self.recovered, self.source_file_hash
+            self.session_id, self.account, self.computer_name, self.record_number, self.recovered,
+            self.source_file_alias
         )
 
     @classmethod
     def get_headers(cls):
         return (
             'Timestamp (UTC)', 'Event ID', 'Description', 'Details', 'Event Source', 'Event Log', 'Session ID',
-            'Account', 'Computer Name', 'Record Number', 'Recovered', 'Source File Hash'
+            'Account', 'Computer Name', 'Record Number', 'Recovered', 'Source File Alias'
         )
 
     def __key__(self):
@@ -65,3 +66,4 @@ def filter_logs(logs, property, keep=True):
     :param keep: Keep or delete records specified by property
     :return: A list of logs that meet the filter conditions
     """
+    pass

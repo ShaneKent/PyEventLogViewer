@@ -499,11 +499,11 @@ class MenuBar(Menu):
         :param event: A click or key press event.
         :return:
         """
-        self.master.close_project()
         projects_path = os.path.join(util.data.get_appdir(), 'Projects')
         filename = filedialog.askopenfilename(initialdir=projects_path, title='Open a Project File',
                                               filetypes=(('ELV Project File', '*.elv'),))
         if len(filename) > 0:
+            self.master.close_project()
             self.master.open_project(filename)
             if self.master.current_project is not None:
                 self.master.update_status_bar('Project opened at ' + self.master.current_project.get_path())
