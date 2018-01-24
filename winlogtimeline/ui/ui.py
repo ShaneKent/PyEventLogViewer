@@ -102,7 +102,7 @@ class GUI(Tk):
                                                     'closing it?', type=messagebox.YESNOCANCEL)
 
             if answer == messagebox.YES:
-                self.master.changes_made = False
+                self.changes_made = False
                 self.current_project.close()
                 self.current_project = None
             elif answer == messagebox.NO:
