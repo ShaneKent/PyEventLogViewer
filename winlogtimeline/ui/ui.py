@@ -341,9 +341,8 @@ class QueryBar(Frame):
         self.drop_down.config(width='15')
         self.drop_down.pack(side=LEFT)
 
-        # -- REMOVE WHEN NOT NEEDED. Only for prototyping reasons.
-        self.button = Button(self, text="Query", command=lambda: None)  # collector.filter_logs(None, None, None))
-        self.button.pack(side=LEFT)
+        #self.button = Button(self, text="Query", command=lambda: collector.collect.filter_logs(None, self.master.current_project, None))
+        #self.button.pack(side=LEFT)
         # --
 
     def __disable__(self):
@@ -610,7 +609,6 @@ class Filters(Frame):
 
         # List of operation columns
         self.opList = ['- Select Operation -']
-        self.create_opList(self.opList)
 
         # Operation variable
         self.ovar = StringVar(self)
@@ -621,6 +619,20 @@ class Filters(Frame):
         self.operations.config(width='15')
         self.operations.pack(side=LEFT)
 
+        #User entered filter value variable
+        self.val = StringVar(self)
+
+        #Filter operation value entry field
+        self.filterVal = Entry(self, textvariable=self.val)
+        self.filterVal.config(width='15')
+        self.filterVal.pack(side=LEFT)
+
+        #self.button = Button(self, text="Query", command=lambda: collector.filter.filter_logs(self.master.current_project, self.filter_config()))
+        self.button = Button(self, text="Query", command=lambda: self.apply_filter())
+        self.button.pack(side=LEFT)
+
+        self.cvar.trace_add('write', lambda *args: self.create_opList())
+
     def __disable__(self):
         self.flabel.config(state=DISABLED)
         self.columns.config(state=DISABLED)
@@ -629,10 +641,55 @@ class Filters(Frame):
         self.flabel.config(state=NORMAL)
         self.columns.config(state=NORMAL)
 
+    def get_opList(self):
+        return self.opList
+
     def create_colList(self, colList):
         tmp = Record.get_headers()
-        for i in range(len(tmp)):
-            colList.append(tmp[i])
+        for col in tmp:
+            colList.append(col)
 
-    def create_opList(self, opList):
-        print(self.cvar.get())
+    def create_opList(self):
+        inttype = {'Event ID', 'Record Number', 'Recovered'}
+        strtype = {'Description', 'Details', 'Event Source', 'Event Log', 'Account', 'Computer Name'}
+
+        column = self.cvar.get()
+        print(column)
+
+        self.opList = ['- Select Operation -']
+        if column in inttype:
+            print('Value is int')
+            self.opList = ['=', '<', '>']
+        elif column in strtype:
+            print('Value is str')
+            self.opList = ['Is', 'Contains']
+
+
+        self.operations['menu'].delete(0, 'end')
+        for choice in self.opList:
+            self.operations['menu'].add_command(label=choice, command=lambda c=choice: self.ovar.set(c))
+        self.ovar.set(self.opList[0])
+
+    def apply_filter(self):
+        config = self.filter_config()
+        logs = collector.filter_logs(self.master.current_project, config)
+        print(type(logs))
+        headers = (
+            'Timestamp (UTC)', 'Event ID', 'Description', 'Details', 'Event Source', 'Event Log', 'Session ID',
+            'Account', 'Computer Name', 'Record Number', 'Recovered', 'Source File Hash'
+        )
+        #self.master.create_new_timeline(records=logs, headers = headers)
+
+    def filter_config(self):
+        col = self.cvar.get()
+        if col == 'Event ID':
+            col = 'event_id'
+        config = (col, self.ovar.get(), self.filterVal.get())
+
+        print(config)
+        return [config]
+
+    def clear_timeline(self):
+        ""
+
+        return
