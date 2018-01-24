@@ -3,6 +3,8 @@ from tkinter import filedialog, messagebox
 from tkinter.ttk import *
 from winlogtimeline.util.logs import Record
 import os
+from csv import writer
+from itertools import compress
 
 
 class ExportWindow(Toplevel):
@@ -160,6 +162,17 @@ class ExportWindow(Toplevel):
         if len(workspace) > 0:
             self.path_name.set(os.path.abspath(workspace))
 
+        file_type = self.type_string.get().split(" ")[0]
+        self.file = os.path.join(os.path.abspath(self.path_name.get()),
+                                 self.file_name.get() + file_type)
+        if os.path.isfile(self.file):
+            self.file_overwrite.grid(row=self.overwrite_row, column=0, columnspan=5, padx=3, pady=3, sticky='NESW')
+            self.file_overwrite.config(
+                text="Warning: A file named '{}{}' at the current location already exists.\nIt may be overwritten.".format(
+                    self.file_name.get(), file_type), foreground="red", anchor=CENTER)
+        else:
+            self.file_overwrite.grid_forget()
+
     def callback_update_path(self):
         """
         Callback used when either the workspace or title entry widgets are modified. Updates the value of the path entry
@@ -168,9 +181,9 @@ class ExportWindow(Toplevel):
         """
         file_type = self.type_string.get().split(" ")[0]
         # Update the project path and ensure that the path is valid.
-        file = os.path.join(os.path.abspath(self.path_name.get()), self.file_name.get() + file_type)
+        self.file = os.path.join(os.path.abspath(self.path_name.get()), self.file_name.get() + file_type)
 
-        if os.path.isfile(file):
+        if os.path.isfile(self.file):
             self.file_overwrite.grid(row=self.overwrite_row, column=0, columnspan=5, padx=3, pady=3, sticky='NESW')
             self.file_overwrite.config(
                 text="Warning: A file named '{}{}' at the current location already exists.\nIt may be overwritten.".format(
@@ -223,9 +236,7 @@ class ExportWindow(Toplevel):
         elif self.delimiter_string.get() == "Tab":
             delimiter = "\t"
 
-        from csv import writer
-
-        with open(self.current_project.get_path() + '/{}.csv'.format(self.file_name.get()), 'w') as csvfile:
+        with open(self.file, 'w') as csvfile:
             w = writer(csvfile, delimiter=delimiter, quoting=0)  # quoting == minimal quoting
 
             header = [key for key in columns if columns[key] == 1]
@@ -233,15 +244,14 @@ class ExportWindow(Toplevel):
 
             booleans = [columns[key] for key in columns]
 
-            from itertools import compress
             for r in records:
                 values = [r.timestamp_utc, r.event_id, r.description, r.details, r.event_source, r.event_log,
-                          r.session_id, r.account, r.computer_name, r.record_number, r.recovered, r.source_file_hash]
+                          r.session_id, r.account, r.computer_name, r.record_number, r.recovered, r.alias]
                 row = list(compress(values, booleans))
 
                 w.writerow(row)
 
-        self.master.master.update_status_bar("Successfully exported timeline in the current project directory!")
+        self.master.master.update_status_bar("Successfully exported timeline to {}".format(self.file))
 
         self.destroy()
 
