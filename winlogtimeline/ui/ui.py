@@ -43,7 +43,7 @@ class GUI(Tk):
         self.status_bar = StatusBar(self)
         self.toolbar = Toolbar(self)
         self.query_bar = QueryBar(self)
-        # self.filter_section = Filters(self)
+        self.filter_section = Filters(self)
         self.timeline = None
         self.enabled = True
         self.system = platform.system()
@@ -161,8 +161,9 @@ class GUI(Tk):
                     self.__enable__()
                     self.update_status_bar('Done.')
                     return
+            if h is None:
                 h = Record.get_headers()
-                r = [record.get_tuple() for record in r]
+            r = [record.get_tuple() for record in r]
 
             # Delete the old timeline if it exists
             if self.timeline is not None:
@@ -183,7 +184,7 @@ class GUI(Tk):
         self.enabled = False
         if self.system != 'Darwin':
             self.toolbar.__disable__()
-            self.query_bar.__disable__()
+            #self.query_bar.__disable__()
             # self.filter_section.__disable__()
             self.menu_bar.__disable__()
 
@@ -191,7 +192,7 @@ class GUI(Tk):
         self.enabled = True
         if self.system != 'Darwin':
             self.toolbar.__enable__()
-            self.query_bar.__enable__()
+            # self.query_bar.__enable__()
             # self.filter_section.__enable__()
             self.menu_bar.__enable__()
 
@@ -673,12 +674,8 @@ class Filters(Frame):
     def apply_filter(self):
         config = self.filter_config()
         logs = collector.filter_logs(self.master.current_project, config)
-        print(type(logs))
-        headers = (
-            'Timestamp (UTC)', 'Event ID', 'Description', 'Details', 'Event Source', 'Event Log', 'Session ID',
-            'Account', 'Computer Name', 'Record Number', 'Recovered', 'Source File Hash'
-        )
-        #self.master.create_new_timeline(records=logs, headers = headers)
+
+        self.master.create_new_timeline(records=logs)
 
     def filter_config(self):
         col = self.cvar.get()
@@ -688,8 +685,3 @@ class Filters(Frame):
 
         print(config)
         return [config]
-
-    def clear_timeline(self):
-        ""
-
-        return

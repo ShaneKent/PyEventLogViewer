@@ -1,4 +1,4 @@
-
+from winlogtimeline.util.logs import Record
 
 def filter_logs(project, config):
     """
@@ -8,7 +8,6 @@ def filter_logs(project, config):
     :param config: A config dictionary.
     :return: A list of logs that satisfy the filters specified in the configuration.
     """
-    #config = [('event_id', '=', 5061)]
 
     query = 'SELECT * FROM logs WHERE '
     for constraint in config:
@@ -16,10 +15,13 @@ def filter_logs(project, config):
     query = query[:-5]
     print(query)
 
-    cur = project._conn.execute(query)
+    columns = [col_info[1] for col_info in project._conn.execute('PRAGMA table_info(logs);')]
 
+    cur = project._conn.execute(query)
     logs = cur.fetchall()
     print('Found {} matches'.format(len(logs)))
+
+    logs = [Record(**dict(zip(columns, row))) for row in logs]
 
     return logs
 
