@@ -13,9 +13,9 @@ CREATE TABLE IF NOT EXISTS logs (
   computer_name TEXT NOT NULL,
   record_number INTEGER NOT NULL,
   recovered BOOLEAN NOT NULL,
-  source_file_hash TEXT NOT NULL,
+  alias TEXT NOT NULL,
   record_hash TEXT NOT NULL,
-  FOREIGN KEY(source_file_hash) REFERENCES source_files(hash)
+  FOREIGN KEY(alias) REFERENCES source_files(alias)
 );
 /*
     This table contains a row for each file which has been parsed for event logs.
@@ -24,6 +24,6 @@ CREATE TABLE IF NOT EXISTS source_files (
   file_name TEXT NOT NULL,
   hash TEXT NOT NULL UNIQUE,
   import_timestamp DATETIME NOT NULL,
-  alias TEXT NOT NULL,
+  alias TEXT NOT NULL UNIQUE,
   computer_name TEXT
 );

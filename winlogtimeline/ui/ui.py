@@ -9,6 +9,7 @@ from winlogtimeline.util.logs import Record
 from .new_project import NewProject
 from .tag_settings import TagSettings
 from .import_window import ImportWindow
+from .help_window import HelpWindow
 from .export_timeline import ExportWindow
 import os
 import platform
@@ -464,7 +465,19 @@ class MenuBar(Menu):
         # Tools -> Timeline Colors
         self.tool_menu.add_command(label='Timeline Colors', command=self.color_settings_function, underline=0)
         # Tools -> Import Log
-        self.tool_menu.add_command(label='Import Log File', command=self.import_button_function, underline=0)
+        self.tool_menu.add_command(label='Import Log File', command=self.import_button_function, underline=0,
+                                   accelerator='Ctrl+I')
+        parent.bind('<Control-i>', self.import_button_function)
+
+        # Help
+        self.help_menu = Menu(self, **kwargs)
+        self.add_cascade(label='Help', menu=self.help_menu, underline=0)
+        # Help -> About
+        self.help_menu.add_command(label='About', command=self.about_function, underline=0)
+        # Help -> License
+        self.help_menu.add_command(label='License', command=self.license_function, underline=0)
+        # Help -> Contact
+        self.help_menu.add_command(label='Contact', command=self.contact_function, underline=0)
 
 
     def new_project_function(self, event=None):
@@ -486,11 +499,11 @@ class MenuBar(Menu):
         :param event: A click or key press event.
         :return:
         """
-        self.master.close_project()
         projects_path = os.path.join(util.data.get_appdir(), 'Projects')
         filename = filedialog.askopenfilename(initialdir=projects_path, title='Open a Project File',
                                               filetypes=(('ELV Project File', '*.elv'),))
         if len(filename) > 0:
+            self.master.close_project()
             self.master.open_project(filename)
             if self.master.current_project is not None:
                 self.master.update_status_bar('Project opened at ' + self.master.current_project.get_path())
@@ -535,6 +548,30 @@ class MenuBar(Menu):
         :return:
         """
         wizard = ExportWindow(self, self.master.current_project)
+        wizard.grab_set()
+
+    def about_function(self, event=None):
+        """
+        :param event:
+        :return:
+        """
+        wizard = HelpWindow(self, "about")
+        wizard.grab_set()
+
+    def license_function(self, event=None):
+        """
+        :param event:
+        :return:
+        """
+        wizard = HelpWindow(self, "license")
+        wizard.grab_set()
+
+    def contact_function(self, event=None):
+        """
+        :param event:
+        :return:
+        """
+        wizard = HelpWindow(self, "contact")
         wizard.grab_set()
 
     def __enable__(self):
