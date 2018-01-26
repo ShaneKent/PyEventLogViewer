@@ -214,16 +214,8 @@ class Timeline(Frame):
         self.update_column_widths(data)
         self.update_tags(parent.current_project.config['events'])
         self.populate_timeline(data)
+        self.sort_column('Timestamp (UTC)', False)
         self._place_widgets()
-
-    def update_tags(self, tags):
-        """
-        Updates the colors associated with record tags.
-        :param tags: The tags to update.
-        :return:
-        """
-        for tag, color in tags.items():
-            self.tree.tag_configure(tag, background=color)
 
     def _init_widgets(self):
         # Treeview
@@ -242,6 +234,15 @@ class Timeline(Frame):
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=1)
         self.pack(fill='both', expand=True)
+
+    def update_tags(self, tags):
+        """
+        Updates the colors associated with record tags.
+        :param tags: The tags to update.
+        :return:
+        """
+        for tag, color in tags.items():
+            self.tree.tag_configure(tag, background=color)
 
     def setup_columns(self):
         """
