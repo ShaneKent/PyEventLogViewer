@@ -145,13 +145,13 @@ def parse_id_1074(raw, record):
 
 
 def parse_id_1102(raw, record):
-    data = raw["Event"]["EventData"]["Data"]
+    data = raw["Event"]["UserData"]["LogFileCleared"]
 
     record["description"] = "Log Cleared"
-    record["account"] = data[1]["#text"]
+    record["account"] = data["SubjectUserSid"]
     record["details"] = f'Security event log was cleared by the following account: ' \
-                        f'{data[2]["#text"]}\\{data[1]["#text"]}'
-    record["session_id"] = data[3]["#text"]
+                        f'{data["SubjectUserSid"]}\\{data["SubjectDomainName"]}'
+    record["session_id"] = data["SubjectLogonId"]
 
     return record
 
