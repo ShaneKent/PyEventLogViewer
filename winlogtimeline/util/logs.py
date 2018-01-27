@@ -21,7 +21,7 @@ class Record:
     def get_tuple(self):
         return (
             self.timestamp_utc, self.event_id, self.description, self.details, self.event_source, self.event_log,
-            self.session_id, self.account, self.computer_name, self.record_number, self.recovered,
+            self.session_id, self.account, self.computer_name, self.record_number, self.record_hash,
             self.source_file_alias
         )
 
@@ -29,7 +29,7 @@ class Record:
     def get_headers(cls):
         return (
             'Timestamp (UTC)', 'Event ID', 'Description', 'Details', 'Event Source', 'Event Log', 'Session ID',
-            'Account', 'Computer Name', 'Record Number', 'Recovered', 'Source File Alias'
+            'Account', 'Computer Name', 'Record Number', 'Record Hash', 'Source File Alias'
         )
 
     def __key__(self):

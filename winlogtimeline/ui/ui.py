@@ -334,45 +334,12 @@ class Timeline(Frame):
         item = self.tree.selection()[0]
         event = self.tree.item(item, "values")
 
-        key_string = event[0] + event[1] + event[2] + event[3] + event[8] + event[4] + event[5]
-        hash = md5(bytes(key_string, 'utf-8')).hexdigest()
-
-        query = "SELECT * FROM raw_xml_data WHERE record_hash IS '{}'".format(hash)
+        # Query for all of the records that have the specific record hash
+        query = "SELECT * FROM raw_xml_data WHERE record_hash IS '{}'".format(event[-2])
         cur = self.master.current_project._conn.execute(query)
-        logs = cur.fetchall()
+        record = cur.fetchall()[0]
 
-        print(logs)
-
-
-"""
-class QueryBar(Frame):
-    def __init__(self, parent, **kwargs):
-        super().__init__(parent, **kwargs)
-        self.pack(side=TOP, fill=X)
-
-        self.label = Label(self, text='Show Events:', anchor=W, **kwargs)
-        self.label.pack(side=LEFT)
-
-        self.variable = StringVar(self)
-        self.variable.set('All')
-
-        self.drop_down = OptionMenu(self, self.variable, 'System Startup', 'System Shutdown', 'Time Change',
-                                    'All')
-        self.drop_down.config(width='15')
-        self.drop_down.pack(side=LEFT)
-
-        #self.button = Button(self, text="Query", command=lambda: collector.collect.filter_logs(None, self.master.current_project, None))
-        #self.button.pack(side=LEFT)
-        # --
-
-    def __disable__(self):
-        self.button.config(state=DISABLED)
-        self.drop_down.config(state=DISABLED)
-
-    def __enable__(self):
-        self.button.config(state=NORMAL)
-        self.drop_down.config(state=NORMAL)
-"""
+        print(record[1])
 
 class StatusBar(Frame):
     def __init__(self, parent):
