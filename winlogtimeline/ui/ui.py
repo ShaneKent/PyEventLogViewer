@@ -13,7 +13,7 @@ from .help_window import HelpWindow
 from .export_timeline import ExportWindow
 import os
 import platform
-
+from hashlib import md5
 
 def enable_disable_wrapper(_lambda):
     def decorate(f):
@@ -42,7 +42,7 @@ class GUI(Tk):
         self.menu_bar = MenuBar(self, tearoff=False)
         self.status_bar = StatusBar(self)
         self.toolbar = Toolbar(self)
-        self.query_bar = QueryBar(self)
+        # self.query_bar = QueryBar(self)
         self.filter_section = Filters(self)
         self.timeline = None
         self.enabled = True
@@ -122,7 +122,6 @@ class GUI(Tk):
         :param alias: A unique alias for the file.
         :return:
         """
-
         def callback():
             # Prepare status bar callback.
             text = '{file}: {status}'.format(file=os.path.basename(file_name), status='{status}')
@@ -230,6 +229,7 @@ class Timeline(Frame):
         self.tree['displaycolumns'] = Record.get_headers()
         # Add a context menu on right click for enabling and disabling columns
         self.tree.bind('<Button-3>', self.master.menu_bar.header_popup)
+        self.tree.bind("<Double-1>", self.double_click)
 
     def _place_widgets(self):
         # Tree
@@ -330,7 +330,21 @@ class Timeline(Frame):
 
         self.tree.heading(col, command=lambda _col=col: self.sort_column(_col, not reverse))
 
+    def double_click(self, event):
+        item = self.tree.selection()[0]
+        event = self.tree.item(item, "values")
 
+        key_string = event[0] + event[1] + event[2] + event[3] + event[8] + event[4] + event[5]
+        hash = md5(bytes(key_string, 'utf-8')).hexdigest()
+
+        query = "SELECT * FROM raw_xml_data WHERE record_hash IS '{}'".format(hash)
+        cur = self.master.current_project._conn.execute(query)
+        logs = cur.fetchall()
+
+        print(logs)
+
+
+"""
 class QueryBar(Frame):
     def __init__(self, parent, **kwargs):
         super().__init__(parent, **kwargs)
@@ -358,7 +372,7 @@ class QueryBar(Frame):
     def __enable__(self):
         self.button.config(state=NORMAL)
         self.drop_down.config(state=NORMAL)
-
+"""
 
 class StatusBar(Frame):
     def __init__(self, parent):

@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS logs (
   record_hash TEXT NOT NULL,
   FOREIGN KEY(alias) REFERENCES source_files(alias)
 );
+
 /*
     This table contains a row for each file which has been parsed for event logs.
  */
@@ -26,4 +27,13 @@ CREATE TABLE IF NOT EXISTS source_files (
   import_timestamp DATETIME NOT NULL,
   alias TEXT NOT NULL UNIQUE,
   computer_name TEXT
+);
+
+/*
+    Connects a specific record to its raw XML data.
+ */
+CREATE TABLE IF NOT EXISTS raw_xml_data (
+  record_hash TEXT NOT NULL,
+  raw_xml TEXT NOT NULL,
+  FOREIGN KEY(record_hash) REFERENCES logs(record_hash)
 );

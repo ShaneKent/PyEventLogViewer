@@ -1,6 +1,5 @@
 import xmltodict
 from xml.parsers.expat import ExpatError
-from time import time
 import pyevtx
 from winlogtimeline.util.logs import Record
 from .parser import parser
@@ -39,8 +38,9 @@ def import_log(log_file, alias, project, config, status_callback, progress_conte
     with progress_context_manager(log.get_number_of_records()) as progress_bar:
         for i, record in enumerate(xml_records):
             # Write records to the sqlite db.
-            if record is not None:
-                project.write_log_data(Record(**record))
+
+            if record[0] is not None:
+                project.write_log_data(Record(**record[0]), record[1])
 
             # Update the status bar so we know that things are happening.
             if i % 100 == 0:
@@ -78,7 +78,7 @@ def xml_convert(records, source_file_alias, recovered=True):
             'alias': source_file_alias
         })
 
-        yield dictionary
+        yield [dictionary, record]
 
 
 def collect_records(event_file):
@@ -88,25 +88,6 @@ def collect_records(event_file):
     """
     for i in range(event_file.get_number_of_records()):
         yield event_file.get_record(i).xml_string
-
-
-def collect_deleted_records(event_file):
-    """
-    :param event_file: An event log object.
-    :return: A list of deleted event records in the format returned by libevtx-python.
-    """
-    pass
-
-
-def get_machine_name(records):
-    """
-    Parses a log file to determine the machine it originated from.
-    :param event_file: An event log object.
-    :return: A unique identifier for the machine.
-    """
-    # TODO: determine a unique identifier for machines that can be pulled from the event logs.
-
-    return ''
 
 
 def filter_logs(logs, project, config):
@@ -131,12 +112,3 @@ def filter_logs(logs, project, config):
     #logs = cur.fetchall()
 
     return logs
-
-
-def get_log_file_hash(log_file):
-    """
-    :param log_file: A path to an event log file.
-    :return: The hash of the event log file.
-    """
-    # TODO: discuss which algorithm to use for hashing.
-    return ''

@@ -92,7 +92,7 @@ class Project:
         # Close the log file
         self._conn.close()
 
-    def write_log_data(self, record):
+    def write_log_data(self, record, xml):
         """
         Writes log data to the project as long as it is not a duplicate.
         :param record: A Record object.
@@ -108,6 +108,15 @@ class Project:
                 record.timestamp_utc, record.event_id, record.description, record.details, record.event_source,
                 record.event_log, record.session_id, record.account, record.computer_name, record.record_number,
                 record.recovered, record.record_hash, record.source_file_alias
+            )
+            self._conn.execute(query, values)
+
+            query = ('INSERT INTO raw_xml_data '
+                     '(record_hash, raw_xml) '
+                     'VALUES (?, ?)')
+
+            values = (
+                record.record_hash, xml
             )
             self._conn.execute(query, values)
 
