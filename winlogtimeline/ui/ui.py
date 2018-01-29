@@ -11,10 +11,9 @@ from .tag_settings import TagSettings
 from .import_window import ImportWindow
 from .help_window import HelpWindow
 from .export_timeline import ExportWindow
+from .expanded_view import ExpandedView
 import os
 import platform
-from hashlib import md5
-
 def enable_disable_wrapper(_lambda):
     def decorate(f):
         def call(*args, **kwargs):
@@ -42,8 +41,8 @@ class GUI(Tk):
         self.menu_bar = MenuBar(self, tearoff=False)
         self.status_bar = StatusBar(self)
         self.toolbar = Toolbar(self)
-        # self.query_bar = QueryBar(self)
         self.filter_section = Filters(self)
+        self.expanded_view = None  # SideBar(self)
         self.timeline = None
         self.enabled = True
         self.system = platform.system()
@@ -239,7 +238,7 @@ class Timeline(Frame):
         self.hsb.grid(column=0, row=1, sticky='ew', in_=self)
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=1)
-        self.pack(fill='both', expand=True)
+        self.pack(fill=Y, expand=True)
 
     def update_tags(self, tags):
         """
@@ -339,7 +338,10 @@ class Timeline(Frame):
         cur = self.master.current_project._conn.execute(query)
         record = cur.fetchall()[0]
 
-        print(record[1])
+        if self.master.expanded_view == None:  # or self.master.side_bar == .!sidebar:
+            self.master.expanded_view = ExpandedView(self.master)
+
+        self.master.expanded_view.update(record[1])
 
 class StatusBar(Frame):
     def __init__(self, parent):
