@@ -122,6 +122,7 @@ class GUI(Tk):
         :param alias: A unique alias for the file.
         :return:
         """
+
         def callback():
             # Prepare status bar callback.
             text = '{file}: {status}'.format(file=os.path.basename(file_name), status='{status}')
@@ -225,6 +226,10 @@ class Timeline(Frame):
         self.vsb = Scrollbar(orient='vertical', command=self.tree.yview)
         self.hsb = Scrollbar(orient='horizontal', command=self.tree.xview)
         self.tree.configure(yscrollcommand=self.vsb.set, xscrollcommand=self.hsb.set)
+        # Set all columns to be enabled by default
+        self.tree['displaycolumns'] = Record.get_headers()
+        # Add a context menu on right click for enabling and disabling columns
+        self.tree.bind('<Button-3>', self.master.menu_bar.header_popup)
 
     def _place_widgets(self):
         # Tree
@@ -460,6 +465,32 @@ class MenuBar(Menu):
                                    accelerator='Ctrl+E')
         parent.bind('<Control-e>', self.export_button_function)
 
+        # View
+        self.view_menu = Menu(self, **kwargs)
+        self.add_cascade(label='View', menu=self.view_menu, underline=0)
+        # View -> Timeline Headers
+        self.timeline_header_menu = Menu(self, **kwargs)
+        self.view_menu.add_cascade(label='Timeline Headers', menu=self.timeline_header_menu, underline=0)
+        self.header_vars = dict()
+        underlines = set()
+        self.timeline_header_menu.add_command(label='Enable All', command=self.enable_all_columns_function, underline=8)
+        self.timeline_header_menu.add_separator()
+        # Individual headers and associated variables/callbacks
+        for h in Record.get_headers():
+            # Initialize the variable indicating whether or not the column is enabled
+            self.header_vars[h] = BooleanVar()
+            # Determine which character to underline for shortcuts
+            i = 0
+            while h[i] in underlines:
+                i += 1
+            underlines.add(h[i])
+            # Add the checkbutton
+            self.timeline_header_menu.add_checkbutton(label=h, onvalue=True, offvalue=False,
+                                                      variable=self.header_vars[h], underline=i)
+            # Default value and callback function
+            self.header_vars[h].set(True)
+            self.header_vars[h].trace('w', self.update_column_function)
+
         # Tools
         self.tool_menu = Menu(self, **kwargs)
         self.add_cascade(label='Tools', menu=self.tool_menu, underline=0)
@@ -479,7 +510,6 @@ class MenuBar(Menu):
         self.help_menu.add_command(label='License', command=self.license_function, underline=0)
         # Help -> Contact
         self.help_menu.add_command(label='Contact', command=self.contact_function, underline=0)
-
 
     def new_project_function(self, event=None):
         """
@@ -551,6 +581,36 @@ class MenuBar(Menu):
         wizard = ExportWindow(self, self.master.current_project)
         wizard.grab_set()
 
+    @enable_disable_wrapper(lambda *args: args[0].master)
+    def update_column_function(self, *args, event=None):
+        """
+        Used to enable and disable timeline columns.
+        :return:
+        """
+        if self.master.timeline is None:
+            return
+        self.master.timeline.tree['displaycolumns'] = tuple(
+            col for col in Record.get_headers() if self.header_vars[col].get())
+
+    def enable_all_columns_function(self, event=None):
+        """
+        Enables all columns.
+        :return:
+        """
+        for h, v in self.header_vars.items():
+            if not v.get():
+                v.set(True)
+
+    def header_popup(self, event=None):
+        """
+        Event callback used when the user right clicks on the timeline. Should bring up the header enable/disable menu.
+        :return:
+        """
+        try:
+            self.timeline_header_menu.tk_popup(event.x_root, event.y_root)
+        finally:
+            self.timeline_header_menu.grab_release()
+
     def about_function(self, event=None):
         """
         :param event:
@@ -577,11 +637,13 @@ class MenuBar(Menu):
 
     def __enable__(self):
         self.entryconfig('Tools', state=NORMAL)
+        self.entryconfig('View', state=NORMAL)
         self.file_menu.entryconfig('Save', state=NORMAL)
         self.file_menu.entryconfig('Export Timeline', state=NORMAL)
 
     def __disable__(self):
         self.entryconfig('Tools', state=DISABLED)
+        self.entryconfig('View', state=DISABLED)
         self.file_menu.entryconfig('Save', state=DISABLED)
         self.file_menu.entryconfig('Export Timeline', state=DISABLED)
 
@@ -620,10 +682,10 @@ class Filters(Frame):
         self.operations.config(width='15')
         self.operations.pack(side=LEFT)
 
-        #User entered filter value variable
+        # User entered filter value variable
         self.val = StringVar(self)
 
-        #Filter operation value entry field
+        # Filter operation value entry field
         self.filterVal = Entry(self, textvariable=self.val)
         self.filterVal.config(width='15')
         self.filterVal.pack(side=LEFT)
@@ -662,7 +724,6 @@ class Filters(Frame):
             self.opList = ['=', '<', '>']
         elif column in strtype:
             self.opList = ['Contains']
-
 
         self.operations['menu'].delete(0, 'end')
         for choice in self.opList:
