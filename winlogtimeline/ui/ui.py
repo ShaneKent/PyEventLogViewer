@@ -651,19 +651,17 @@ class Filters(Frame):
             colList.append(col)
 
     def create_opList(self):
-        inttype = {'Event ID', 'Record Number', 'Recovered'}
-        strtype = {'Description', 'Details', 'Event Source', 'Event Log', 'Account', 'Computer Name'}
+        inttype = {'Event ID', 'Record Number', 'Recovered', 'Timestamp (UTC)'}
+        strtype = {'Description', 'Details', 'Event Source', 'Event Log', 'Session ID', 'Account', 'Computer Name', 'Source File Alias'}
 
         column = self.cvar.get()
         print(column)
 
         self.opList = ['- Select Operation -']
         if column in inttype:
-            print('Value is int')
             self.opList = ['=', '<', '>']
         elif column in strtype:
-            print('Value is str')
-            self.opList = ['Is', 'Contains']
+            self.opList = ['Contains']
 
 
         self.operations['menu'].delete(0, 'end')
@@ -679,8 +677,6 @@ class Filters(Frame):
 
     def filter_config(self):
         col = self.cvar.get()
-        if col == 'Event ID':
-            col = 'event_id'
         config = (col, self.ovar.get(), self.filterVal.get())
 
         print(config)
