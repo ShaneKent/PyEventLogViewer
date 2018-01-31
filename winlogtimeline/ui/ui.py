@@ -338,7 +338,7 @@ class Timeline(Frame):
         cur = self.master.current_project._conn.execute(query)
         record = cur.fetchall()[0]
 
-        if self.master.expanded_view == None:  # or self.master.side_bar == .!sidebar:
+        if self.master.expanded_view is None:  # or self.master.side_bar == .!sidebar:
             self.master.expanded_view = ExpandedView(self.master)
 
         self.master.expanded_view.update(record[1])

@@ -26,6 +26,11 @@ class ExpandedView(Toplevel):
         self.listbox.pack(anchor=W, fill=BOTH, expand=1)
 
     def update(self, record):
+        """
+`       Updates the expanded view record area with the XML for each record.
+        :param record: string for the XML that will be displayed.
+        :return:
+        """
         list = record.split("\n")
 
         self.listbox.delete(0, END)

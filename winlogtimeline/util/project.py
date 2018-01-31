@@ -115,9 +115,7 @@ class Project:
                      '(record_hash, raw_xml) '
                      'VALUES (?, ?)')
 
-            values = (
-                record.record_hash, xml
-            )
+            values = (record.record_hash, xml)
             self._conn.execute(query, values)
 
     def write_verification_data(self, file_hash, log_file, alias):

@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS source_files (
     Connects a specific record to its raw XML data.
  */
 CREATE TABLE IF NOT EXISTS raw_xml_data (
-  record_hash TEXT NOT NULL,
+  record_hash TEXT NOT NULL UNIQUE,
   raw_xml TEXT NOT NULL,
   FOREIGN KEY(record_hash) REFERENCES logs(record_hash)
 );
