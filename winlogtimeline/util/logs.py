@@ -33,14 +33,8 @@ class Record:
         )
 
     def __key__(self):
-        key_string = ""
-        key_string += self.timestamp_utc
-        key_string += str(self.event_id)
-        key_string += self.description
-        key_string += self.computer_name
-        key_string += self.event_source
-        key_string += self.event_log
-        return key_string
+        return (f'{self.timestamp_utc}{self.event_id}{self.details}{self.computer_name}{self.event_source}'
+                f'{self.event_log}{self.session_id}{self.account}')
 
     def __hash__(self):
         return hashlib.md5(bytes(self.__key__(), 'utf-8')).hexdigest()

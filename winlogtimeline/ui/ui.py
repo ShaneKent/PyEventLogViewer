@@ -14,6 +14,8 @@ from .export_timeline import ExportWindow
 from .expanded_view import ExpandedView
 import os
 import platform
+
+
 def enable_disable_wrapper(_lambda):
     def decorate(f):
         def call(*args, **kwargs):
@@ -121,14 +123,19 @@ class GUI(Tk):
         :param alias: A unique alias for the file.
         :return:
         """
+        self.__disable__()
+
         def callback():
             # Prepare status bar callback.
             text = '{file}: {status}'.format(file=os.path.basename(file_name), status='{status}')
 
             # Start the import log process.
-            collector.import_log(file_name, alias, self.current_project, '',
-                                 lambda s: self.update_status_bar(text.format(status=s)),
-                                 self.get_progress_bar_context_manager)
+            try:
+                collector.import_log(file_name, alias, self.current_project, '',
+                                     lambda s: self.update_status_bar(text.format(status=s)),
+                                     self.get_progress_bar_context_manager)
+            except Exception as e:
+                self.update_status_bar(f'Error while importing log: {str(e)}')
 
             # Create or update the timeline.
             self.create_new_timeline()
@@ -183,7 +190,7 @@ class GUI(Tk):
         self.enabled = False
         if self.system != 'Darwin':
             self.toolbar.__disable__()
-            #self.query_bar.__disable__()
+            # self.query_bar.__disable__()
             # self.filter_section.__disable__()
             self.menu_bar.__disable__()
 
@@ -342,6 +349,7 @@ class Timeline(Frame):
             self.master.expanded_view = ExpandedView(self.master)
 
         self.master.expanded_view.update(record[1])
+
 
 class StatusBar(Frame):
     def __init__(self, parent):
@@ -673,7 +681,7 @@ class Filters(Frame):
         self.filterVal.config(width='15')
         self.filterVal.pack(side=LEFT)
 
-        #self.button = Button(self, text="Query", command=lambda: collector.filter.filter_logs(self.master.current_project, self.filter_config()))
+        # self.button = Button(self, text="Query", command=lambda: collector.filter.filter_logs(self.master.current_project, self.filter_config()))
         self.button = Button(self, text="Query", command=lambda: self.apply_filter())
         self.button.pack(side=LEFT)
 
@@ -697,7 +705,8 @@ class Filters(Frame):
 
     def create_opList(self):
         inttype = {'Event ID', 'Record Number', 'Recovered', 'Timestamp (UTC)'}
-        strtype = {'Description', 'Details', 'Event Source', 'Event Log', 'Session ID', 'Account', 'Computer Name', 'Source File Alias'}
+        strtype = {'Description', 'Details', 'Event Source', 'Event Log', 'Session ID', 'Account', 'Computer Name',
+                   'Source File Alias'}
 
         column = self.cvar.get()
         print(column)
