@@ -94,29 +94,29 @@ class Project:
 
     def write_log_data(self, record, xml):
         """
-        Writes log data to the project as long as it is not a duplicate.
+        Writes log data to the project.
         :param record: A Record object.
+        :param xml: The raw xml for the record.
         :return: None
         """
 
-        if not self.is_duplicate(record):
-            query = ('INSERT INTO logs '
-                     '(timestamp_utc, event_id, description, details, event_source, event_log, session_id, account,'
-                     ' computer_name, record_number, recovered, record_hash, alias) '
-                     'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-            values = (
-                record.timestamp_utc, record.event_id, record.description, record.details, record.event_source,
-                record.event_log, record.session_id, record.account, record.computer_name, record.record_number,
-                record.recovered, record.record_hash, record.source_file_alias
-            )
-            self._conn.execute(query, values)
+        query = ('INSERT INTO logs '
+                 '(timestamp_utc, event_id, description, details, event_source, event_log, session_id, account,'
+                 ' computer_name, record_number, recovered, record_hash, alias) '
+                 'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+        values = (
+            record.timestamp_utc, record.event_id, record.description, record.details, record.event_source,
+            record.event_log, record.session_id, record.account, record.computer_name, record.record_number,
+            record.recovered, record.record_hash, record.source_file_alias
+        )
+        self._conn.execute(query, values)
 
-            query = ('INSERT INTO raw_xml_data '
-                     '(record_hash, raw_xml) '
-                     'VALUES (?, ?)')
+        query = ('INSERT INTO raw_xml_data '
+                 '(record_hash, raw_xml) '
+                 'VALUES (?, ?)')
 
-            values = (record.record_hash, xml)
-            self._conn.execute(query, values)
+        values = (record.record_hash, xml)
+        self._conn.execute(query, values)
 
     def write_verification_data(self, file_hash, log_file, alias):
         """
@@ -155,11 +155,3 @@ class Project:
         aliases = [row[3] for row in rows]
 
         return aliases
-
-    def is_duplicate(self, record):
-        """
-
-        :return:
-        """
-        # TODO: implement and document
-        return False
