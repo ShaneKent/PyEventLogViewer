@@ -234,8 +234,11 @@ class Timeline(Frame):
         # Set all columns to be enabled by default
         self.tree['displaycolumns'] = Record.get_headers()
         # Add a context menu on right click for enabling and disabling columns
-        self.tree.bind('<Button-2>', self.master.menu_bar.header_popup)  # macOS or Unix
-        self.tree.bind('<Button-3>', self.master.menu_bar.header_popup)  # Windows
+        if (self.master.system.lower() == "darwin"):
+            self.tree.bind('<Button-2>', self.master.menu_bar.header_popup)  # macOS or Unix
+        else:
+            self.tree.bind('<Button-3>', self.master.menu_bar.header_popup)  # Windows
+
         self.tree.bind("<Double-1>", self.double_click)
 
     def _place_widgets(self):
