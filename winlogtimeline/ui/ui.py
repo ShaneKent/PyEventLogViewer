@@ -744,9 +744,11 @@ class Filters(Frame):
         self.filterVal.config(width='15')
         self.filterVal.pack(side=LEFT)
 
-        # self.button = Button(self, text="Query", command=lambda: collector.filter.filter_logs(self.master.current_project, self.filter_config()))
         self.button = Button(self, text="Query", command=lambda: self.apply_filter())
         self.button.pack(side=LEFT)
+
+        self.clear = Button(self, text="Clear", command=lambda:self.master.create_new_timeline())
+        self.clear.pack(side=LEFT)
 
         self.cvar.trace_add('write', lambda *args: self.create_opList())
 

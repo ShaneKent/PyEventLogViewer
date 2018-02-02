@@ -8,8 +8,6 @@ def filter_logs(project, config):
     :param config: A config dictionary.
     :return: A list of logs that satisfy the filters specified in the configuration.
     """
-    #for r in project._conn.execute('PRAGMA table_info(logs);'):
-    #    print(r)
 
     headers = Record.get_headers()
     col, operator, value = config[0]
