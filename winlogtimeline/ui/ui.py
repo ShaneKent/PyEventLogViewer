@@ -790,6 +790,8 @@ class Filters(Frame):
         logs = collector.filter_logs(self.master.current_project, config)
 
         self.master.create_new_timeline(records=logs)
+        print('Found {} records'.format(len(logs)))
+        self.master.status_bar.update_status('text')
 
     def filter_config(self):
         col = self.cvar.get()

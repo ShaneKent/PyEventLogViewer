@@ -24,8 +24,8 @@ def filter_logs(project, config):
     #columns = [col_info[1] for col_info in info]
     idx = headers.index(col)
     col = columns[idx]
-    type = types[idx] #Data type for this column
-    if type == 'DATETIME':
+    datatype = types[idx] #Data type for this column
+    if datatype == 'DATETIME':
         value = "'" + value + "'"
         if len(value.split()) == 1:
             col = 'date(' + col + ')'
@@ -46,7 +46,7 @@ def filter_logs(project, config):
 
     cur = project._conn.execute(query)
     logs = cur.fetchall()
-    print('Found {} matches'.format(len(logs)))
+    print('Found {} records'.format(len(logs)))
 
     logs = [Record(**dict(zip(columns, row))) for row in logs]
 
