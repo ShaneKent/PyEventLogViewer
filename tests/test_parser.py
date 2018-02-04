@@ -1,5 +1,7 @@
 # Run Instructions:
     # python3 setup.py test
+    # pytest tests/test_parser.py -s
+
 
 import os
 from xml.parsers.expat import ExpatError
@@ -11,222 +13,883 @@ import pyevtx
 
 
 # path to log file
-record_file = os.path.abspath('tests/Security.evtx')
+#record_file = os.path.abspath('tests/Security.evtx')
 
-with open(record_file, "rb") as file:
-    file_hash = md5(file.read()).hexdigest()
+#with open(record_file, "rb") as file:
+    #file_hash = md5(file.read()).hexdigest()
 
 # Open the file with pyevtx and parse.
-log = pyevtx.open(record_file)
-records = collect.collect_records(log)
+#log = pyevtx.open(record_file)
+#records = collect.collect_records(log)
 
-def test_parser():
-    for record in records:
-        try:
-            d = xmltodict.parse(record)
-        except ExpatError:
-            record = record.replace("\x00", "")  # This can not be the best way to do this...
-            d = xmltodict.parse(record)
+def test_parser_id_1():
+    xmlInput = '<Event xmlns = "http://schemas.microsoft.com/win/2004/08/events/event">' +\
+    '<System>' +\
+    '<Provider Name="Microsoft-Windows-Kernel-General" Guid="{A68CA8B7-004F-D7B6-A698-07E2DE0F1F5D}"/>' +\
+    '<EventID>1</EventID>' +\
+    '<Version>1</Version>' +\
+    '<Level>4</Level>' +\
+    '<Task>5</Task>' +\
+    '<Opcode>0</Opcode>' +\
+    '<Keywords>0x8000000000000010</Keywords>' +\
+    '<TimeCreated SystemTime="2017-01-02T00:28:02.499911900Z"/>' +\
+    '<EventRecordID>521</EventRecordID>' +\
+    '<Correlation/>' +\
+    '<Execution ProcessID="4" ThreadID="372"/>' +\
+    '<Channel>System</Channel>' +\
+    '<Computer>LAPTOP-9KUQNI2Q</Computer>' +\
+    '<Security/>' +\
+    '</System>' +\
+    '<EventData>' +\
+    '<Data Name="NewTime">2017-01-02T00:28:02.500000000Z</Data>' +\
+    '<Data Name="OldTime">2017-01-01T22:19:39.790389600Z</Data>' +\
+    '<Data Name="Reason">2</Data>' +\
+    '</EventData>' +\
+    '</Event>'
+    d = xmltodict.parse(xmlInput)
+    sys = d['Event']['System']
+    rec = {'timestamp_utc': sys['TimeCreated']['@SystemTime'],
+           'event_id': sys['EventID'],
+           'description': '',
+           'details': '',
+           'event_source': sys['Provider']['@Name'],
+           'event_log': sys['Channel'],
+           'session_id': '',
+           'account': '',
+           'computer_name': sys['Computer'],
+           'record_number': sys['EventRecordID'],
+           'recovered': True,
+           'alias': 'Sample'
+           }
+    record = parser.parser(d, rec)
+    assert(record["account"]) == "SYSTEM"
+    assert(record["description"]) == "Wake Up"
+    assert (record["details"]) == "Wake Time: 2017-01-01T 22:19:39.790 (UTC) | " +\
+           "Sleep Start Time: 2017-01-02T 00:28:02.500 (UTC)"
 
-        sys = d['Event']['System']
 
-        rec = {'timestamp_utc': sys['TimeCreated']['@SystemTime'],
-               'event_id': sys['EventID'],
-               'description': '',
-               'details': '',
-               'event_source': sys['Provider']['@Name'],
-               'event_log': sys['Channel'],
-               'session_id': '',
-               'account': '',
-               'computer_name': sys['Computer'],
-               'record_number': sys['EventRecordID'],
-               'recovered': True,
-               'alias': 'Sample'
-               }
+def test_parser_id_12():
+    xmlInput = '<Event xmlns="http://schemas.microsoft.com/win/2004/08/events/event">' +\
+    '<System>' +\
+    '<Provider Name="Microsoft-Windows-Kernel-General" Guid="{A68CA8B7-004F-D7B6-A698-07E2DE0F1F5D}"/>' +\
+    '<EventID>12</EventID>' +\
+    '<Version>0</Version>' +\
+    '<Level>4</Level>' +\
+    '<Task>1</Task>' +\
+    '<Opcode>0</Opcode>' +\
+    '<Keywords>0x8000000000000080</Keywords>' +\
+    '<TimeCreated SystemTime="2017-01-01T21:18:30.833529000Z"/>' +\
+    '<EventRecordID>1</EventRecordID>' +\
+    '<Correlation/>' +\
+    '<Execution ProcessID="4" ThreadID="8"/>' +\
+    '<Channel>System</Channel>' +\
+    '<Computer>LAPTOP-9KUQNI2Q</Computer>' +\
+    '<Security UserID="S-1-5-18"/>' +\
+    '</System>' +\
+    '<EventData>' +\
+    '<Data Name="MajorVersion">10</Data>' +\
+    '<Data Name="MinorVersion">0</Data>' +\
+    '<Data Name="BuildVersion">14393</Data>' +\
+    '<Data Name="QfeVersion">576</Data>' +\
+    '<Data Name="ServiceVersion">0</Data>' +\
+    '<Data Name="BootMode">0</Data>' +\
+    '<Data Name="StartTime">2017-01-01T21:18:30.493716600Z</Data>' +\
+    '</EventData>' +\
+    '</Event>'
+    d = xmltodict.parse(xmlInput)
+    sys = d['Event']['System']
+    rec = {'timestamp_utc': sys['TimeCreated']['@SystemTime'],
+           'event_id': sys['EventID'],
+           'description': '',
+           'details': '',
+           'event_source': sys['Provider']['@Name'],
+           'event_log': sys['Channel'],
+           'session_id': '',
+           'account': '',
+           'computer_name': sys['Computer'],
+           'record_number': sys['EventRecordID'],
+           'recovered': True,
+           'alias': 'Sample'
+           }
+    record = parser.parser(d, rec)
+    assert(record["account"]) == "SYSTEM"
+    assert(record["description"]) == "System Start"
+    assert(record["details"]) == 'Starting Windows NT version 10. 0. 14393 at 2017-01-01 21:18:30.493 (UTC)'
 
-        event_id = rec["event_id"]
 
-        if event_id == "1":
-            record = parser.parse_id_1(d, rec)  # System    -   Wake Up
-            data = d["Event"]["EventData"]["Data"]
-            assert(record["account"]) == "SYSTEM"
-            assert(record["description"]) == "Wake Up"
-            assert(record["details"]) == f'Wake Time: {data[1]["#text"][0:11]} {data[1]["#text"][11:23]} (UTC) | ' \
-                                         f'Sleep Start Time: {data[0]["#text"][0:11]} {data[0]["#text"][11:23]} (UTC)'
+def test_parser_id_13():
+    xmlInput = '<Event xmlns="http://schemas.microsoft.com/win/2004/08/events/event">' +\
+    '<System>' +\
+    '<Provider Name="Microsoft-Windows-Kernel-General" Guid="{A68CA8B7-004F-D7B6-A698-07E2DE0F1F5D}"/>' +\
+    '<EventID>13</EventID>' +\
+    '<Version>0</Version>' +\
+    '<Level>4</Level>' +\
+    '<Task>2</Task>' +\
+    '<Opcode>0</Opcode>' +\
+    '<Keywords>0x8000000000000080</Keywords>' +\
+    '<TimeCreated SystemTime="2017-01-01T21:23:31.105184900Z"/>' +\
+    '<EventRecordID>308</EventRecordID>' +\
+    '<Correlation/>' +\
+    '<Execution ProcessID="4" ThreadID="400"/>' +\
+    '<Channel>System</Channel>' +\
+    '<Computer>LAPTOP-9KUQNI2Q</Computer>' +\
+    '<Security/>' +\
+    '</System>' +\
+    '<EventData>' +\
+    '<Data Name="StopTime">2017-01-01T21:23:31.105183800Z</Data>' +\
+    '</EventData>' +\
+    '</Event>'
+    d = xmltodict.parse(xmlInput)
+    sys = d['Event']['System']
+    rec = {'timestamp_utc': sys['TimeCreated']['@SystemTime'],
+           'event_id': sys['EventID'],
+           'description': '',
+           'details': '',
+           'event_source': sys['Provider']['@Name'],
+           'event_log': sys['Channel'],
+           'session_id': '',
+           'account': '',
+           'computer_name': sys['Computer'],
+           'record_number': sys['EventRecordID'],
+           'recovered': True,
+           'alias': 'Sample'
+           }
+    record = parser.parser(d, rec)
+    assert(record["account"]) == "SYSTEM"
+    assert(record["description"]) == "System Shutdown"
+    assert(record["details"]) == "Shutdown Time: 2017-01-01 21:23:31.105 (UTC)"
 
-        elif event_id == "12":
-            record = parser.parse_id_12(d, rec)  # System    -   System Start
-            data = d["Event"]["EventData"]["Data"]
-            assert(record["account"]) == "SYSTEM"
-            assert(record["description"]) == "System Start"
-            if len(data) == 7:
-                assert(record["details"]) == f'Starting Windows NT version {data[0]["#text"]}. {data[1]["#text"]}. ' \
-                                             f'{data[2]["#text"]} at {data[6]["#text"][0:10]} {data[6]["#text"][11:23]} (UTC)'
 
-        elif event_id == "13":
-            record = parser.parse_id_13(d, rec)  # System    -   System Shutdown
-            data = d["Event"]["EventData"]["Data"]
-            assert(record["account"]) == "SYSTEM"
-            assert(record["description"]) == "System Shutdown"
-            assert(record["details"]) == f'Shutdown Time: {data["#text"][0:10]} {data["#text"][11:23]} (UTC)'
+def test_parser_id_41():
+    xmlInput = '<Event xmlns="http://schemas.microsoft.com/win/2004/08/events/event">' +\
+    '<System>' +\
+    '<Provider Name="Microsoft-Windows-Kernel-Power" Guid="{331C3B3A-2005-44C2-AC5E-77220C37D6B4}"/>' +\
+    '<EventID>41</EventID>' +\
+    '<Version>4</Version>' +\
+    '<Level>1</Level>' +\
+    '<Task>63</Task>' +\
+    '<Opcode>0</Opcode>' +\
+    '<Keywords>0x8000400000000002</Keywords>' +\
+    '<TimeCreated SystemTime="2017-01-16T17:25:11.723879500Z"/>' +\
+    '<EventRecordID>1569</EventRecordID>' +\
+    '<Correlation/>' +\
+    '<Execution ProcessID="4" ThreadID="8"/>' +\
+    '<Channel>System</Channel>' +\
+    '<Computer>LAPTOP-9KUQNI2Q</Computer>' +\
+    '<Security UserID="S-1-5-18"/>' +\
+    '</System>' +\
+    '<EventData>' +\
+    '<Data Name="BugcheckCode">0</Data>' +\
+    '<Data Name="BugcheckParameter1">0x0000000000000000</Data>' +\
+    '<Data Name="BugcheckParameter2">0x0000000000000000</Data>' +\
+    '<Data Name="BugcheckParameter3">0x0000000000000000</Data>' +\
+    '<Data Name="BugcheckParameter4">0x0000000000000000</Data>' +\
+    '<Data Name="SleepInProgress">4</Data>' +\
+    '<Data Name="PowerButtonTimestamp">0</Data>' +\
+    '<Data Name="BootAppStatus">0</Data>' +\
+    '<Data Name="Checkpoint">0</Data>' +\
+    '<Data Name="ConnectedStandbyInProgress">false</Data>' +\
+    '<Data Name="SystemSleepTransitionsToOn">12</Data>' +\
+    '<Data Name="CsEntryScenarioInstanceId">0</Data>' +\
+    '</EventData>' +\
+    '</Event>'
+    d = xmltodict.parse(xmlInput)
+    sys = d['Event']['System']
+    rec = {'timestamp_utc': sys['TimeCreated']['@SystemTime'],
+           'event_id': sys['EventID'],
+           'description': '',
+           'details': '',
+           'event_source': sys['Provider']['@Name'],
+           'event_log': sys['Channel'],
+           'session_id': '',
+           'account': '',
+           'computer_name': sys['Computer'],
+           'record_number': sys['EventRecordID'],
+           'recovered': True,
+           'alias': 'Sample'
+           }
+    record = parser.parse_id_41(d, rec)
+    assert (record["account"]) == "SYSTEM"
+    assert (record["description"]) == "Shutdown Error"
 
-        elif event_id == "41":
-            record = parser.parse_id_41(d, rec)  # System    -   Shutdown Error
-            assert(record["account"]) == "SYSTEM"
-            assert(record["description"]) == "Shutdown Error"
 
-        elif event_id == "42":
-            record = parser.parse_id_42(d, rec)  # System    -   Sleep Mode
-            data = d["Event"]["EventData"]["Data"]
-            assert(record["account"]) == "SYSTEM"
-            assert(record["description"]) == "Sleep Mode"
-            reason = data[2]["#text"]
-            if reason == "0":
-                assert(record["details"]) == "Starting Sleep Mode. Reason: Power button/Close lid"
-            elif reason == "2":
-                assert(record["details"]) == "Starting Sleep Mode. Reason: Low battery"
-            elif reason == "4":
-                assert(record["details"]) == "Starting Sleep Mode. Reason: Application"
-            elif reason == "7":
-                assert(record["details"]) == "Starting Sleep Mode. Reason: System idle"
-            else:
-                assert(record["details"]) == "Starting Sleep Mode. Reason: Undefined*"
+def test_parser_id_42():
+    xmlInput = '<Event xmlns="http://schemas.microsoft.com/win/2004/08/events/event">' +\
+    '<System>' +\
+    '<Provider Name="Microsoft-Windows-Kernel-Power" Guid="{331C3B3A-2005-44C2-AC5E-77220C37D6B4}"/>' +\
+    '<EventID>42</EventID>' +\
+    '<Version>3</Version>' +\
+    '<Level>4</Level>' +\
+    '<Task>64</Task>' +\
+    '<Opcode>0</Opcode>' +\
+    '<Keywords>0x8000400000000404</Keywords>' +\
+    '<TimeCreated SystemTime="2017-01-01T22:19:38.726978700Z"/>' +\
+    '<EventRecordID>519</EventRecordID>' +\
+    '<Correlation/>' +\
+    '<Execution ProcessID="4" ThreadID="372"/>' +\
+    '<Channel>System</Channel>' +\
+    '<Computer>LAPTOP-9KUQNI2Q</Computer>' +\
+    '<Security/>' +\
+    '</System>' +\
+    '<EventData>' +\
+    '<Data Name="TargetState">4</Data>' +\
+    '<Data Name="EffectiveState">4</Data>' +\
+    '<Data Name="Reason">0</Data>' +\
+    '<Data Name="Flags">4</Data>' +\
+    '<Data Name="TransitionsToOn">1</Data>' +\
+    '</EventData>' +\
+    '</Event>'
+    d = xmltodict.parse(xmlInput)
+    sys = d['Event']['System']
+    rec = {'timestamp_utc': sys['TimeCreated']['@SystemTime'],
+           'event_id': sys['EventID'],
+           'description': '',
+           'details': '',
+           'event_source': sys['Provider']['@Name'],
+           'event_log': sys['Channel'],
+           'session_id': '',
+           'account': '',
+           'computer_name': sys['Computer'],
+           'record_number': sys['EventRecordID'],
+           'recovered': True,
+           'alias': 'Sample'
+           }
+    record = parser.parse_id_42(d, rec)  # System    -   Sleep Mode
+    data = d["Event"]["EventData"]["Data"]
+    assert(record["account"]) == "SYSTEM"
+    assert(record["description"]) == "Sleep Mode"
+    reason = data[2]["#text"]
+    if reason == "0":
+        assert(record["details"]) == "Starting Sleep Mode. Reason: Power button/Close lid"
+    elif reason == "2":
+        assert(record["details"]) == "Starting Sleep Mode. Reason: Low battery"
+    elif reason == "4":
+        assert(record["details"]) == "Starting Sleep Mode. Reason: Application"
+    elif reason == "7":
+        assert(record["details"]) == "Starting Sleep Mode. Reason: System idle"
+    else:
+        assert(record["details"]) == "Starting Sleep Mode. Reason: Undefined*"
 
-        elif event_id == "104":
-            record = parser.parse_id_104(d, rec)  # System    -   Log Cleared
-            data = d["Event"]["UserData"]["LogFileCleared"]
-            assert(record["account"]) == data["SubjectUserName"]
-            assert(record["description"]) == "Log Cleared"
-            assert(record["details"]) == f'System event log was cleared by the following account: ' \
-                                         f'{data["SubjectDomainName"]}\\{data["Channel"]}'
 
-        elif event_id == "1074":
-            record = parser.parse_id_1074(d, rec)  # System    -   Shutdown Initiated
-            data = d["Event"]["EventData"]["Data"]
-            assert(record["account"]) == data[6]["#text"].split("\\")[-1]
-            assert(record["details"]) == f'Cause: {data[4]["#text"]}'
-            assert(record["computer_name"]) == data[1]["#text"]
-            if data[3]["#text"] == "0x500ff":
-                assert(record["description"]) == "Shutdown Initiated"
-            else:
-                assert(record["description"]) == "ERROR"
+def test_parser_id_104():
+    xmlInput = '<Event xmlns="http://schemas.microsoft.com/win/2004/08/events/event">' +\
+    '<System>' +\
+    '<Provider Name="Microsoft-Windows-Eventlog" Guid="{fc65ddd8-d6ef-4962-83d5-6e5cfe9ce148}"/>' +\
+    '<EventID>104</EventID>' +\
+    '<Version>0</Version>' +\
+    '<Level>4</Level>' +\
+    '<Task>104</Task>' +\
+    '<Opcode>0</Opcode>' +\
+    '<Keywords>0x8000000000000000</Keywords>' +\
+    '<TimeCreated SystemTime="2018-01-27T04:17:28.719000600Z"/>' +\
+    '<EventRecordID>4294</EventRecordID>' +\
+    '<Correlation/>' +\
+    '<Execution ProcessID="1560" ThreadID="13028"/>' +\
+    '<Channel>System</Channel>' +\
+    '<Computer>DESKTOP-C0O9EV0</Computer>' +\
+    '<Security UserID="S-1-5-21-1990300061-1030431749-3499390798-1001"/>' +\
+    '</System>' +\
+    '<UserData>' +\
+    '<LogFileCleared xmlns="http://manifests.microsoft.com/win/2004/08/windows/eventlog">' +\
+    '<SubjectUserName>Shane Kent</SubjectUserName>' +\
+    '<SubjectDomainName>DESKTOP-C0O9EV0</SubjectDomainName>' +\
+    '<Channel>System</Channel>' +\
+    '<BackupPath>\\DESKTOP-C0O9EV0\\Users\Shane Kent\Desktop\System - Personal.evtx</BackupPath>' +\
+    '</LogFileCleared>' +\
+    '</UserData>' +\
+    '</Event>'
+    d = xmltodict.parse(xmlInput)
+    sys = d['Event']['System']
+    rec = {'timestamp_utc': sys['TimeCreated']['@SystemTime'],
+           'event_id': sys['EventID'],
+           'description': '',
+           'details': '',
+           'event_source': sys['Provider']['@Name'],
+           'event_log': sys['Channel'],
+           'session_id': '',
+           'account': '',
+           'computer_name': sys['Computer'],
+           'record_number': sys['EventRecordID'],
+           'recovered': True,
+           'alias': 'Sample'
+           }
+    record = parser.parse_id_104(d, rec)  # System    -   Log Cleared
+    assert(record["account"]) == "Shane Kent"
+    assert(record["description"]) == "Log Cleared"
+    assert(record["details"]) == "System event log was cleared by the following account: DESKTOP-C0O9EV0\System"
 
-        elif event_id == "1102":
-            record = parser.parse_id_1102(d, rec)  # Security  -   Log Cleared
-            data = d["Event"]["EventData"]["Data"]
-            assert(record["description"]) == "Log Cleared"
-            assert(record["account"]) == data[1]["#text"]
-            assert(record["details"]) == f'Security event log was cleared by the following account: ' \
-                                f'{data[2]["#text"]}\\{data[1]["#text"]}'
-            assert(record["session_id"]) == data[3]["#text"]
 
-        elif event_id == "4616":
-            record = parser.parse_id_4616(d, rec)  # System    -   Time Change
-            data = d["Event"]["EventData"]["Data"]
-            assert(record["description"]) == "Time Change"
-            assert(record["account"]) == data[1]["#text"]
-            assert(record["details"]) == f'Changed To: {data[5]["#text"][0:10]} {data[5]["#text"][11:23]} (UTC) | ' \
-                                f'Previous Time: {data[4]["#text"][0:10]} {data[4]["#text"][11:23]} (UTC)'
+# def test_parser_id_1074(): Do not have
+#     xmlInput = ""
+#     d = xmltodict.parse(xmlInput)
+#     sys = d['Event']['System']
+#     rec = {'timestamp_utc': sys['TimeCreated']['@SystemTime'],
+#            'event_id': sys['EventID'],
+#            'description': '',
+#            'details': '',
+#            'event_source': sys['Provider']['@Name'],
+#            'event_log': sys['Channel'],
+#            'session_id': '',
+#            'account': '',
+#            'computer_name': sys['Computer'],
+#            'record_number': sys['EventRecordID'],
+#            'recovered': True,
+#            'alias': 'Sample'
+#            }
+#     record = parser.parse_id_1074(d, rec)  # System    -   Shutdown Initiated
+#     data = d["Event"]["EventData"]["Data"]
+#     assert(record["account"]) == data[6]["#text"].split("\\")[-1]
+#     assert(record["details"]) == f'Cause: {data[4]["#text"]}'
+#     assert(record["computer_name"]) == data[1]["#text"]
+#     if data[3]["#text"] == "0x500ff":
+#         assert(record["description"]) == "Shutdown Initiated"
+#     else:
+#         assert(record["description"]) == "ERROR"
 
-        elif event_id == "4624":
-            record = parser.parse_id_4624(d, rec)  # System    -   Logon Events
-            data = d["Event"]["EventData"]["Data"]
-            reason = data[8]["#text"]
-            assert(record["account"]) == data[5]["#text"]
-            if reason == "2":
-                assert(record["description"]) == "Interactive Logon"
-            elif reason == "3":
-                assert(record["description"]) == "Network Connection"
-            elif reason == "7":
-                assert(record["description"]) == "Unlock Workstation"
-            elif reason == "10":
-                assert(record["description"]) == "Remote Interactive Logon"
-                assert(record["details"]) == f'From: {data[18]["#text"]} using {data[10]["#text"]} auth as ' \
-                                    f'{data[6]["#text"]}\\{data[5]["#text"]}'
-            elif reason == "11":
-                assert(record["description"]) == "Interactive Logon"
-                assert(record["details"]) == f'Logon as {data[6]["#text"]}\\{data[5]["#text"]} using cached credentials'
-            assert(record["session_id"]) == data[7]["#text"]
 
-        elif event_id == "4634":
-            record = parser.parse_id_4634(d, rec)  # Security  -   Logoff (Network Connection)
-            data = d["Event"]["EventData"]["Data"]
-            assert(record["account"]) == data[4]["#text"]
-            assert(record["description"]) == "Logoff"
-            if data[4]["#text"] == "3":
-                assert(record["details"]) == "End of Network Connection session"
-            else:
-                assert(record["details"]) == "EXCLUDED"
-            assert(record["session_id"]) == data[3]["#text"]
+def test_parser_id_1102():
+    xmlInput = '<Event xmlns="http://schemas.microsoft.com/win/2004/08/events/event">' +\
+    '<System>' +\
+    '<Provider Name="Microsoft-Windows-Eventlog" Guid="{fc65ddd8-d6ef-4962-83d5-6e5cfe9ce148}"/>' +\
+    '<EventID>1102</EventID>' +\
+    '<Version>0</Version>' +\
+    '<Level>4</Level>' +\
+    '<Task>104</Task>' +\
+    '<Opcode>0</Opcode>' +\
+    '<Keywords>0x4020000000000000</Keywords>' +\
+    '<TimeCreated SystemTime="2018-01-27T04:17:18.549878600Z"/>' +\
+    '<EventRecordID>19830</EventRecordID>' +\
+    '<Correlation/>' +\
+    '<Execution ProcessID="1560" ThreadID="7180"/>' +\
+    '<Channel>Security</Channel>' +\
+    '<Computer>DESKTOP-C0O9EV0</Computer>' +\
+    '<Security/>' +\
+    '</System>' +\
+    '<UserData>' +\
+    '<LogFileCleared xmlns="http://manifests.microsoft.com/win/2004/08/windows/eventlog">' +\
+    '<SubjectUserSid>S-1-5-21-1990300061-1030431749-3499390798-1001</SubjectUserSid>' +\
+    '<SubjectUserName>Shane Kent</SubjectUserName>' +\
+    '<SubjectDomainName>DESKTOP-C0O9EV0</SubjectDomainName>' +\
+    '<SubjectLogonId>0x000000000105f3cd</SubjectLogonId>' +\
+    '</LogFileCleared>' +\
+    '</UserData>' +\
+    '</Event>'
+    d = xmltodict.parse(xmlInput)
+    sys = d['Event']['System']
+    rec = {'timestamp_utc': sys['TimeCreated']['@SystemTime'],
+           'event_id': sys['EventID'],
+           'description': '',
+           'details': '',
+           'event_source': sys['Provider']['@Name'],
+           'event_log': sys['Channel'],
+           'session_id': '',
+           'account': '',
+           'computer_name': sys['Computer'],
+           'record_number': sys['EventRecordID'],
+           'recovered': True,
+           'alias': 'Sample'
+           }
+    record = parser.parse_id_1102(d, rec)  # Security  -   Log Cleared
+    assert(record["description"]) == "Log Cleared"
+    assert(record["account"]) == "S-1-5-21-1990300061-1030431749-3499390798-1001"
+    assert (record["details"]) == "Security event log was cleared by the following account: S-1-5-21-1990300061-1030431749-3499390798-1001\DESKTOP-C0O9EV0"
+    assert (record["session_id"]) == "0x000000000105f3cd"
 
-        elif event_id == "4647":
-            record = parser.parse_id_4647(d, rec)  # Security  -   User-Initiated Logoff
-            data = d["Event"]["EventData"]["Data"]
-            assert(record["account"]) == data[1]["#text"]
-            assert(record["description"]) == "User Initiated Logoff"
-            assert(record["session_id"]) == data[3]["#text"]
 
-        elif event_id == "4720":
-            record = parser.parse_id_4720(d, rec)  # Security  -   Account Created
-            data = d["Event"]["EventData"]["Data"]
-            assert(record["account"]) == data[4]["#text"]
-            assert(record["description"]) == "Account Created"
-            assert(record["details"]) == f'New account name: {data[0]["#text"]} (RID {data[2]["#text"][41:45]}) ' \
-                                f'was created by user account ({data[4]["#text"]})'
-            assert(record["session_id"]) == data[6]["#text"]
+def test_parser_id_4616():
+    xmlInput = '<Event xmlns="http://schemas.microsoft.com/win/2004/08/events/event">' +\
+    '<System>' +\
+    '<Provider Name="Microsoft-Windows-Security-Auditing" Guid="{54849625-5478-4994-A5BA-3E3B0328C30D}"/>' +\
+    '<EventID>4616</EventID>' +\
+    '<Version>1</Version>' +\
+    '<Level>0</Level>' +\
+    '<Task>12288</Task>' +\
+    '<Opcode>0</Opcode>' +\
+    '<Keywords>0x8020000000000000</Keywords>' +\
+    '<TimeCreated SystemTime="2017-09-30T06:45:03.871307200Z"/>' +\
+    '<EventRecordID>81180</EventRecordID>' +\
+    '<Correlation/>' +\
+    '<Execution ProcessID="4" ThreadID="188"/>' +\
+    '<Channel>Security</Channel>' +\
+    '<Computer>LAPTOP-9KUQNI2Q</Computer>' +\
+    '<Security/>' +\
+    '</System>' +\
+    '<EventData>' +\
+    '<Data Name="SubjectUserSid">S-1-5-19</Data>' +\
+    '<Data Name="SubjectUserName">LOCAL SERVICE</Data>' +\
+    '<Data Name="SubjectDomainName">NT AUTHORITY</Data>' +\
+    '<Data Name="SubjectLogonId">0x00000000000003e5</Data>' +\
+    '<Data Name="PreviousTime">2017-09-30T06:45:03.871437900Z</Data>' +\
+    '<Data Name="NewTime">2017-09-30T06:45:03.871000000Z</Data>' +\
+    '<Data Name="ProcessId">0x000000000000046c</Data>' +\
+    '<Data Name="ProcessName">C:\Windows\System32\svchost.exe</Data>' +\
+    '</EventData>' +\
+    '</Event>'
+    d = xmltodict.parse(xmlInput)
+    sys = d['Event']['System']
+    rec = {'timestamp_utc': sys['TimeCreated']['@SystemTime'],
+           'event_id': sys['EventID'],
+           'description': '',
+           'details': '',
+           'event_source': sys['Provider']['@Name'],
+           'event_log': sys['Channel'],
+           'session_id': '',
+           'account': '',
+           'computer_name': sys['Computer'],
+           'record_number': sys['EventRecordID'],
+           'recovered': True,
+           'alias': 'Sample'
+           }
+    record = parser.parse_id_4616(d, rec)  # Security  -   Log Cleared
+    assert (record["description"]) == "Time Change"
+    assert (record["account"]) == "LOCAL SERVICE"
+    assert (record["details"]) == "Changed To: 2017-09-30 06:45:03.871 (UTC) | Previous Time: 2017-09-30 06:45:03.871 (UTC)"
 
-        elif event_id == "4722":
-            record = parser.parse_id_4722(d, rec)  # Security  -   Account Enabled
-            data = d["Event"]["EventData"]["Data"]
-            assert(record["account"]) == data[4]["#text"]
-            assert(record["description"]) == "Account Enabled"
-            assert(record["details"]) == f'The user account {data[0]["#text"]} (RID {data[2]["#text"][41:45]}) ' \
-                                f'was enabled by user account ({data[4]["#text"]})'
-            assert(record["session_id"]) == data[6]["#text"]
 
-        elif event_id == "4723":
-            record = parser.parse_id_4723(d, rec)  # Security  -   User Changed Password
-            data = d["Event"]["EventData"]["Data"]
-            assert(record["account"]) == data[4]["#text"]
-            assert(record["description"]) == "User Changed Password"
-            assert(record["details"]) == f'The password of user account {data[0]["#text"]} ' \
-                                         f'(RID {data[2]["#text"][41:45]}) was changed by the user ({data[4]["#text"]})'
-            assert(record["session_id"]) == data[6]["#text"]
+def test_parser_id_4624():
+    xmlInput = '<Event xmlns="http://schemas.microsoft.com/win/2004/08/events/event">' +\
+    '<System>' +\
+    '<Provider Name="Microsoft-Windows-Security-Auditing" Guid="{54849625-5478-4994-A5BA-3E3B0328C30D}"/>' +\
+    '<EventID>4624</EventID>' +\
+    '<Version>2</Version>' +\
+    '<Level>0</Level>' +\
+    '<Task>12544</Task>' +\
+    '<Opcode>0</Opcode>' +\
+    '<Keywords>0x8020000000000000</Keywords>' +\
+    '<TimeCreated SystemTime="2017-09-20T22:07:05.888823900Z"/>' +\
+    '<EventRecordID>74756</EventRecordID>' +\
+    '<Correlation/>' +\
+    '<Execution ProcessID="952" ThreadID="11908"/>' +\
+    '<Channel>Security</Channel>' +\
+    '<Computer>LAPTOP-9KUQNI2Q</Computer>' +\
+    '<Security/>' +\
+    '</System>' +\
+    '<EventData>' +\
+    '<Data Name="SubjectUserSid">S-1-5-18</Data>' +\
+    '<Data Name="SubjectUserName">LAPTOP-9KUQNI2Q$</Data>' +\
+    '<Data Name="SubjectDomainName">WORKGROUP</Data>' +\
+    '<Data Name="SubjectLogonId">0x00000000000003e7</Data>' +\
+    '<Data Name="TargetUserSid">S-1-5-21-26884411-4197249062-1617423603-1001</Data>' +\
+    '<Data Name="TargetUserName">sarahb2626@gmail.com</Data>' +\
+    '<Data Name="TargetDomainName">MicrosoftAccount</Data>' +\
+    '<Data Name="TargetLogonId">0x00000000070cb74f</Data>' +\
+    '<Data Name="LogonType">7</Data>' +\
+    '<Data Name="LogonProcessName">Negotiat</Data>' +\
+    '<Data Name="AuthenticationPackageName">Negotiate</Data>' +\
+    '<Data Name="WorkstationName">LAPTOP-9KUQNI2Q</Data>' +\
+    '<Data Name="LogonGuid">{00000000-0000-0000-0000-000000000000}</Data>' +\
+    '<Data Name="TransmittedServices">-</Data>' +\
+    '<Data Name="LmPackageName">-</Data>' +\
+    '<Data Name="KeyLength">0</Data>' +\
+    '<Data Name="ProcessId">0x00000000000003b8</Data>' +\
+    '<Data Name="ProcessName">C:\Windows\System32\lsass.exe</Data>' +\
+    '<Data Name="IpAddress">-</Data>' +\
+    '<Data Name="IpPort">-</Data>' +\
+    '<Data Name="ImpersonationLevel">%%1833</Data>' +\
+    '<Data Name="RestrictedAdminMode">-</Data>' +\
+    '<Data Name="TargetOutboundUserName">-</Data>' +\
+    '<Data Name="TargetOutboundDomainName">-</Data>' +\
+    '<Data Name="VirtualAccount">%%1843</Data>' +\
+    '<Data Name="TargetLinkedLogonId">0x00000000070cb92a</Data>' +\
+    '<Data Name="ElevatedToken">%%1842</Data>' +\
+    '</EventData>' +\
+    '</Event>'
+    d = xmltodict.parse(xmlInput)
+    sys = d['Event']['System']
+    rec = {'timestamp_utc': sys['TimeCreated']['@SystemTime'],
+           'event_id': sys['EventID'],
+           'description': '',
+           'details': '',
+           'event_source': sys['Provider']['@Name'],
+           'event_log': sys['Channel'],
+           'session_id': '',
+           'account': '',
+           'computer_name': sys['Computer'],
+           'record_number': sys['EventRecordID'],
+           'recovered': True,
+           'alias': 'Sample'
+           }
+    record = parser.parse_id_4624(d, rec)
+    data = d["Event"]["EventData"]["Data"]
+    reason = data[8]["#text"]
+    assert(record["account"]) == "sarahb2626@gmail.com"
 
-        elif event_id == "4724":
-            record = parser.parse_id_4724(d, rec)  # Security  -   Privileged User Reset Password
-            data = d["Event"]["EventData"]["Data"]
-            assert(record["account"]) == data[4]["#text"]
-            assert(record["description"]) == "Privileged User Reset Password"
-            assert(record["details"]) == f'The password of user account {data[0]["#text"]} (RID {data[2]["#text"][41:45]}) ' \
-                                f'was reset by a privileged user account ({data[4]["#text"]})'
-            assert(record["session_id"]) == data[6]["#text"]
+    if reason == "2":
+        assert(record["description"]) == "Interactive Logon"
+    elif reason == "3":
+        assert(record["description"]) == "Network Connection"
+    elif reason == "7":
+        assert(record["description"]) == "Unlock Workstation"
+    elif reason == "10":
+        assert(record["description"]) == "Remote Interactive Logon"
+        assert(record["details"]) == f'From: {data[18]["#text"]} using {data[10]["#text"]} auth as ' \
+                            f'{data[6]["#text"]}\\{data[5]["#text"]}'
+    elif reason == "11":
+        assert(record["description"]) == "Interactive Logon"
+        assert(record["details"]) == "Logon as MicrosoftAccount\sarahb2626@gmail.com using cached credentials"
 
-        elif event_id == "4725":
-            record = parser.parse_id_4725(d, rec)  # Security  -   Account Disabled
-            data = d["Event"]["EventData"]["Data"]
-            assert(record["account"]) == data[4]["#text"]
-            assert(record["description"]) == "Account Disabled"
-            assert(record["details"]) == f'The user account {data[0]["#text"]} (RID {data[2]["#text"][41:45]}) ' \
-                                f'was disabled by user account ({data[4]["#text"]})'
-            assert(record["session_id"]) == data[6]["#text"]
+    assert(record["session_id"]) == "0x00000000070cb74f"
 
-        elif event_id == "4726":
-            record = parser.parse_id_4726(d, rec)  # Security  -   Account Deleted
-            data = d["Event"]["EventData"]["Data"]
-            assert(record["account"]) == data[4]["#text"]
-            assert(record["description"]) == "Account Deleted"
-            assert(record["details"]) == f'The user account {data[0]["#text"]} (RID {data[2]["#text"][41:45]}) ' \
-                                f'was deleted by user account ({data[4]["#text"]})'
-            assert(record["session_id"]) == data[6]["#text"]
 
-        elif event_id == "6008":
-            record = parser.parse_id_6008(d, rec)  # System    -   Shutdown Error
-            record["description"] = "Shutdown Error"
-        elif event_id == "6013":
-            record = parser.parse_id_6013(d, rec)  # System    -   System Status
-            data = d["Event"]["EventData"]["Data"]
-            assert(record["account"]) == "SYSTEM"
-            assert(record["description"]) == "System Status"
-            assert(record["details"]) == f'System Uptime: {data[4]["#text"]} seconds. ' \
-                                         f'Time Zone Setting: {data[6]["#text"]}.'
+def test_parser_id_4634():
+    xmlInput = '<Event xmlns="http://schemas.microsoft.com/win/2004/08/events/event">' +\
+    '<System>' +\
+    '<Provider Name="Microsoft-Windows-Security-Auditing" Guid="{54849625-5478-4994-A5BA-3E3B0328C30D}"/>' +\
+    '<EventID>4634</EventID>' +\
+    '<Version>0</Version>' +\
+    '<Level>0</Level>' +\
+    '<Task>12545</Task>' +\
+    '<Opcode>0</Opcode>' +\
+    '<Keywords>0x8020000000000000</Keywords>' +\
+    '<TimeCreated SystemTime="2017-09-20T22:07:05.889512400Z"/>' +\
+    '<EventRecordID>74759</EventRecordID>' +\
+    '<Correlation/>' +\
+    '<Execution ProcessID="952" ThreadID="6700"/>' +\
+    '<Channel>Security</Channel>' +\
+    '<Computer>LAPTOP-9KUQNI2Q</Computer>' +\
+    '<Security/>' +\
+    '</System>' +\
+    '<EventData>' +\
+    '<Data Name="TargetUserSid">S-1-5-21-26884411-4197249062-1617423603-1001</Data>' +\
+    '<Data Name="TargetUserName">sarah</Data>' +\
+    '<Data Name="TargetDomainName">LAPTOP-9KUQNI2Q</Data>' +\
+    '<Data Name="TargetLogonId">0x00000000070cb92a</Data>' +\
+    '<Data Name="LogonType">7</Data>' +\
+    '</EventData>' +\
+    '</Event>'
+    d = xmltodict.parse(xmlInput)
+    sys = d['Event']['System']
+    rec = {'timestamp_utc': sys['TimeCreated']['@SystemTime'],
+           'event_id': sys['EventID'],
+           'description': '',
+           'details': '',
+           'event_source': sys['Provider']['@Name'],
+           'event_log': sys['Channel'],
+           'session_id': '',
+           'account': '',
+           'computer_name': sys['Computer'],
+           'record_number': sys['EventRecordID'],
+           'recovered': True,
+           'alias': 'Sample'
+           }
+    record = parser.parse_id_4634(d, rec)
+    data = d["Event"]["EventData"]["Data"]
+    assert(record["account"]) == "7"
+    assert(record["description"]) == "Logoff"
+    if data[4]["#text"] == "3":
+        assert (record["details"]) == "End of Network Connection session"
+    else:
+        assert (record["details"]) == "EXCLUDED"
+    assert (record["session_id"]) == "0x00000000070cb92a"
+
+
+def test_parser_id_4647():
+    xmlInput = '<Event xmlns="http://schemas.microsoft.com/win/2004/08/events/event">' +\
+    '<System>' +\
+    '<Provider Name="Microsoft-Windows-Security-Auditing" Guid="{54849625-5478-4994-A5BA-3E3B0328C30D}"/>' +\
+    '<EventID>4647</EventID>' +\
+    '<Version>0</Version>' +\
+    '<Level>0</Level>' +\
+    '<Task>12545</Task>' +\
+    '<Opcode>0</Opcode>' +\
+    '<Keywords>0x8020000000000000</Keywords>' +\
+    '<TimeCreated SystemTime="2017-07-14T02:58:51.707545100Z"/>' +\
+    '<EventRecordID>57191</EventRecordID>' +\
+    '<Correlation ActivityID="{ED7488E8-FACA-0001-0989-74EDCAFAD201}"/>' +\
+    '<Execution ProcessID="944" ThreadID="10404"/>' +\
+    '<Channel>Security</Channel>' +\
+    '<Computer>LAPTOP-9KUQNI2Q</Computer>' +\
+    '<Security/>' +\
+    '</System>' +\
+    '<EventData>' +\
+    '<Data Name="TargetUserSid">S-1-5-21-26884411-4197249062-1617423603-1001</Data>' +\
+    '<Data Name="TargetUserName">sarah</Data>' +\
+    '<Data Name="TargetDomainName">LAPTOP-9KUQNI2Q</Data>' +\
+    '<Data Name="TargetLogonId">0x000000000005a6d8</Data>' +\
+    '</EventData>' +\
+    '</Event>'
+    d = xmltodict.parse(xmlInput)
+    sys = d['Event']['System']
+    rec = {'timestamp_utc': sys['TimeCreated']['@SystemTime'],
+           'event_id': sys['EventID'],
+           'description': '',
+           'details': '',
+           'event_source': sys['Provider']['@Name'],
+           'event_log': sys['Channel'],
+           'session_id': '',
+           'account': '',
+           'computer_name': sys['Computer'],
+           'record_number': sys['EventRecordID'],
+           'recovered': True,
+           'alias': 'Sample'
+           }
+    record = parser.parse_id_4647(d, rec)
+    assert(record["account"]) == "sarah"
+    assert(record["description"]) == "User Initiated Logoff"
+    assert(record["session_id"]) == "0x000000000005a6d8"
+
+
+# def test_parser_id_4720(): # Do not have
+#     xmlInput = ""
+#     d = xmltodict.parse(xmlInput)
+#     sys = d['Event']['System']
+#     rec = {'timestamp_utc': sys['TimeCreated']['@SystemTime'],
+#            'event_id': sys['EventID'],
+#            'description': '',
+#            'details': '',
+#            'event_source': sys['Provider']['@Name'],
+#            'event_log': sys['Channel'],
+#            'session_id': '',
+#            'account': '',
+#            'computer_name': sys['Computer'],
+#            'record_number': sys['EventRecordID'],
+#            'recovered': True,
+#            'alias': 'Sample'
+#            }
+#     record = parser.parse_id_4720(d, rec)  # Security  -   Account Created
+#     data = d["Event"]["EventData"]["Data"]
+#     assert(record["account"]) == data[4]["#text"]
+#     assert(record["description"]) == "Account Created"
+#     assert(record["details"]) == f'New account name: {data[0]["#text"]} (RID {data[2]["#text"][41:45]}) ' \
+#                         f'was created by user account ({data[4]["#text"]})'
+#     assert(record["session_id"]) == data[6]["#text"]
+
+
+# def test_parser_id_4722(): # Do not have
+#     xmlInput = ""
+#     d = xmltodict.parse(xmlInput)
+#     sys = d['Event']['System']
+#     rec = {'timestamp_utc': sys['TimeCreated']['@SystemTime'],
+#            'event_id': sys['EventID'],
+#            'description': '',
+#            'details': '',
+#            'event_source': sys['Provider']['@Name'],
+#            'event_log': sys['Channel'],
+#            'session_id': '',
+#            'account': '',
+#            'computer_name': sys['Computer'],
+#            'record_number': sys['EventRecordID'],
+#            'recovered': True,
+#            'alias': 'Sample'
+#            }
+#     record = parser.parse_id_4722(d, rec)  # Security  -   Account Enabled
+#     data = d["Event"]["EventData"]["Data"]
+#     assert (record["account"]) == data[4]["#text"]
+#     assert (record["description"]) == "Account Enabled"
+#     assert (record["details"]) == f'The user account {data[0]["#text"]} (RID {data[2]["#text"][41:45]}) ' \
+#                                   f'was enabled by user account ({data[4]["#text"]})'
+#     assert (record["session_id"]) == data[6]["#text"]
+
+
+# def test_parser_id_4723(): # Do not have
+#     xmlInput = ""
+#     d = xmltodict.parse(xmlInput)
+#     sys = d['Event']['System']
+#     rec = {'timestamp_utc': sys['TimeCreated']['@SystemTime'],
+#            'event_id': sys['EventID'],
+#            'description': '',
+#            'details': '',
+#            'event_source': sys['Provider']['@Name'],
+#            'event_log': sys['Channel'],
+#            'session_id': '',
+#            'account': '',
+#            'computer_name': sys['Computer'],
+#            'record_number': sys['EventRecordID'],
+#            'recovered': True,
+#            'alias': 'Sample'
+#            }
+#     record = parser.parse_id_4723(d, rec)  # Security  -   User Changed Password
+#     data = d["Event"]["EventData"]["Data"]
+#     assert (record["account"]) == data[4]["#text"]
+#     assert (record["description"]) == "User Changed Password"
+#     assert (record["details"]) == f'The password of user account {data[0]["#text"]} ' \
+#                                   f'(RID {data[2]["#text"][41:45]}) was changed by the user ({data[4]["#text"]})'
+#     assert (record["session_id"]) == data[6]["#text"]
+
+
+# def test_parser_id_4724(): # Do not have
+#     xmlInput = ""
+#     d = xmltodict.parse(xmlInput)
+#     sys = d['Event']['System']
+#     rec = {'timestamp_utc': sys['TimeCreated']['@SystemTime'],
+#            'event_id': sys['EventID'],
+#            'description': '',
+#            'details': '',
+#            'event_source': sys['Provider']['@Name'],
+#            'event_log': sys['Channel'],
+#            'session_id': '',
+#            'account': '',
+#            'computer_name': sys['Computer'],
+#            'record_number': sys['EventRecordID'],
+#            'recovered': True,
+#            'alias': 'Sample'
+#            }
+#     record = parser.parse_id_4724(d, rec)  # Security  -   Privileged User Reset Password
+#     data = d["Event"]["EventData"]["Data"]
+#     assert (record["account"]) == data[4]["#text"]
+#     assert (record["description"]) == "Privileged User Reset Password"
+#     assert (record["details"]) == f'The password of user account {data[0]["#text"]} (RID {data[2]["#text"][41:45]}) ' \
+#                                   f'was reset by a privileged user account ({data[4]["#text"]})'
+#     assert (record["session_id"]) == data[6]["#text"]
+
+
+# def test_parser_id_4725(): # Do not have
+#     xmlInput = ""
+#     d = xmltodict.parse(xmlInput)
+#     sys = d['Event']['System']
+#     rec = {'timestamp_utc': sys['TimeCreated']['@SystemTime'],
+#            'event_id': sys['EventID'],
+#            'description': '',
+#            'details': '',
+#            'event_source': sys['Provider']['@Name'],
+#            'event_log': sys['Channel'],
+#            'session_id': '',
+#            'account': '',
+#            'computer_name': sys['Computer'],
+#            'record_number': sys['EventRecordID'],
+#            'recovered': True,
+#            'alias': 'Sample'
+#            }
+#     record = parser.parse_id_4725(d, rec)  # Security  -   Account Disabled
+#     data = d["Event"]["EventData"]["Data"]
+#     assert(record["account"]) == data[4]["#text"]
+#     assert(record["description"]) == "Account Disabled"
+#     assert(record["details"]) == f'The user account {data[0]["#text"]} (RID {data[2]["#text"][41:45]}) ' \
+#                         f'was disabled by user account ({data[4]["#text"]})'
+#     assert(record["session_id"]) == data[6]["#text"]
+
+
+# def test_parser_id_4726(): # Do not have
+#     xmlInput = ""
+#     d = xmltodict.parse(xmlInput)
+#     sys = d['Event']['System']
+#     rec = {'timestamp_utc': sys['TimeCreated']['@SystemTime'],
+#            'event_id': sys['EventID'],
+#            'description': '',
+#            'details': '',
+#            'event_source': sys['Provider']['@Name'],
+#            'event_log': sys['Channel'],
+#            'session_id': '',
+#            'account': '',
+#            'computer_name': sys['Computer'],
+#            'record_number': sys['EventRecordID'],
+#            'recovered': True,
+#            'alias': 'Sample'
+#            }
+#     record = parser.parse_id_4726(d, rec)  # Security  -   Account Deleted
+#     data = d["Event"]["EventData"]["Data"]
+#     assert(record["account"]) == data[4]["#text"]
+#     assert(record["description"]) == "Account Deleted"
+#     assert(record["details"]) == f'The user account {data[0]["#text"]} (RID {data[2]["#text"][41:45]}) ' \
+#                         f'was deleted by user account ({data[4]["#text"]})'
+#     assert(record["session_id"]) == data[6]["#text"]
+
+
+# def test_parser_id_6008(): # Do not have
+#     xmlInput = ""
+#     d = xmltodict.parse(xmlInput)
+#     sys = d['Event']['System']
+#     rec = {'timestamp_utc': sys['TimeCreated']['@SystemTime'],
+#            'event_id': sys['EventID'],
+#            'description': '',
+#            'details': '',
+#            'event_source': sys['Provider']['@Name'],
+#            'event_log': sys['Channel'],
+#            'session_id': '',
+#            'account': '',
+#            'computer_name': sys['Computer'],
+#            'record_number': sys['EventRecordID'],
+#            'recovered': True,
+#            'alias': 'Sample'
+#            }
+#     record = parser.parse_id_6008(d, rec)  # System    -   Shutdown Error
+#     assert(record["description"]) == "Shutdown Error"
+
+
+# def test_parser_id_6013(): # Do not have
+#     xmlInput = ""
+#     d = xmltodict.parse(xmlInput)
+#     sys = d['Event']['System']
+#     rec = {'timestamp_utc': sys['TimeCreated']['@SystemTime'],
+#            'event_id': sys['EventID'],
+#            'description': '',
+#            'details': '',
+#            'event_source': sys['Provider']['@Name'],
+#            'event_log': sys['Channel'],
+#            'session_id': '',
+#            'account': '',
+#            'computer_name': sys['Computer'],
+#            'record_number': sys['EventRecordID'],
+#            'recovered': True,
+#            'alias': 'Sample'
+#            }
+#     record = parser.parse_id_6013(d, rec)  # System    -   System Status
+#     data = d["Event"]["EventData"]["Data"]
+#     assert(record["account"]) == "SYSTEM"
+#     assert(record["description"]) == "System Status"
+#     assert(record["details"]) == f'System Uptime: {data[4]["#text"]} seconds. ' \
+#                               f'Time Zone Setting: {data[6]["#text"]}.'
+
+
+# def test_parser():
+#     for record in records:
+#         try:
+#             d = xmltodict.parse(record)
+#         except ExpatError:
+#             record = record.replace("\x00", "")  # This can not be the best way to do this...
+#             d = xmltodict.parse(record)
+#
+#         sys = d['Event']['System']
+#
+#         rec = {'timestamp_utc': sys['TimeCreated']['@SystemTime'],
+#                'event_id': sys['EventID'],
+#                'description': '',
+#                'details': '',
+#                'event_source': sys['Provider']['@Name'],
+#                'event_log': sys['Channel'],
+#                'session_id': '',
+#                'account': '',
+#                'computer_name': sys['Computer'],
+#                'record_number': sys['EventRecordID'],
+#                'recovered': True,
+#                'alias': 'Sample'
+#                }
+#
+#         event_id = rec["event_id"]
+#
+#         if event_id == "1074": # Do not have
+#             print(record)
+#             break
+#
+#         if event_id == "4720": # Do not have
+#             print(record)
+#             break
+#
+#
+#         if event_id == "4722": # Do not have
+#             print(record)
+#             break
+#
+#         if event_id == "4723": # Do not have
+#             print(record)
+#             break
+#
+#         if event_id == "4724": # Do not have
+#             print(record)
+#             break
+#
+#         if event_id == "4725": # Do not have
+#             print(record)
+#             break
+#
+#         if event_id == "4726": # Do not have
+#             print(record)
+#             break
+#
+#         if event_id == "6008": # Do not have
+#             print(record)
+#             break
+#
+#         if event_id == "6013": # Do not have
+#             print(record)
+#             break
