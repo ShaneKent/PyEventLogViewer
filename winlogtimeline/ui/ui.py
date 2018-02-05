@@ -232,7 +232,7 @@ class Timeline(Frame):
         self.hsb = Scrollbar(orient='horizontal', command=self.tree.xview)
         self.tree.configure(yscrollcommand=self.vsb.set, xscrollcommand=self.hsb.set)
         # Set all columns to be enabled by default
-        self.tree['displaycolumns'] = Record.get_headers()
+        self.tree['displaycolumns'] = self.master.current_project.config['state']['columns']
         # Add a context menu on right click for enabling and disabling columns
         if (self.master.system.lower() == "darwin"):
             self.tree.bind('<Button-2>', self.master.menu_bar.header_popup)  # macOS or Unix
@@ -535,6 +535,11 @@ class MenuBar(Menu):
                 self.master.update_status_bar('Project opened at ' + self.master.current_project.get_path())
             else:
                 self.master.update_status_bar('Failed to open the project at ' + filename)
+
+        # Load the enabled and disabled
+        for col in self.header_vars.keys():
+            self.header_vars[col].set(col in self.master.current_project.config['state']['columns'])
+
         self.master.changes_made = False
 
     @enable_disable_wrapper(lambda *args: args[0].master)
@@ -582,10 +587,13 @@ class MenuBar(Menu):
         Used to enable and disable timeline columns.
         :return:
         """
+        columns = tuple(col for col in Record.get_headers() if self.header_vars[col].get())
+        if self.master.current_project is not None:
+            self.master.current_project.config['state']['columns'] = columns
+            self.master.changes_made = True
         if self.master.timeline is None:
             return
-        self.master.timeline.tree['displaycolumns'] = tuple(
-            col for col in Record.get_headers() if self.header_vars[col].get())
+        self.master.timeline.tree['displaycolumns'] = columns
 
     def enable_all_columns_function(self, event=None):
         """

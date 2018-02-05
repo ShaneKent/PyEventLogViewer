@@ -51,6 +51,13 @@ class Project:
             # Fetch the column names
             self._columns = [col_info[1] for col_info in self._conn.execute('PRAGMA table_info(logs);')]
 
+            # State vars
+            if 'state' not in self.config.keys():
+                self.config['state'] = dict()
+            # Enabled/disabled column state
+            if 'columns' not in self.config['state'].keys():
+                self.config['state']['columns'] = Record.get_headers()
+
         except Exception as e:
             self.exception = e
             raise e
