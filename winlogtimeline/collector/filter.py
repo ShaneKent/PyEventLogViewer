@@ -31,7 +31,14 @@ def filter_logs(project, config):
             col = 'date(' + col + ')'
     config = [(col, operator, value)]
 
-    query = 'SELECT * FROM logs WHERE '
+    # Timestamp offset
+    offset = project.config['state']['timestamp_offset']
+    if not isinstance(offset, int) or not (-12 <= offset <= 12):
+        project.config['state']['timestamp_offset'] = offset = 0
+
+    query = (f'SELECT strftime(\'%Y-%m-%d %H:%M:%f\', timestamp_utc, \'{offset:+d} hours\'), event_id, description,'
+             f' details, event_source, event_log, session_id, account, computer_name, record_number, recovered, '
+             f'alias, record_hash FROM logs WHERE ')
     for constraint in config:
         query += '{} {} {} AND '.format(*constraint)
     query = query[:-5]
