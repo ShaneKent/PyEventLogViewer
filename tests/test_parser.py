@@ -62,7 +62,7 @@ def test_parser_id_1():
            'recovered': True,
            'alias': 'Sample'
            }
-    record = parser.parser(d, rec)
+    record = parser.parse_id_1(d, rec)
     assert(record["account"]) == "SYSTEM"
     assert(record["description"]) == "Wake Up"
     assert (record["details"]) == "Wake Time: 2017-01-01T 22:19:39.790 (UTC) | " +\
@@ -112,7 +112,7 @@ def test_parser_id_12():
            'recovered': True,
            'alias': 'Sample'
            }
-    record = parser.parser(d, rec)
+    record = parser.parse_id_12(d, rec)
     assert(record["account"]) == "SYSTEM"
     assert(record["description"]) == "System Start"
     assert(record["details"]) == 'Starting Windows NT version 10. 0. 14393 at 2017-01-01 21:18:30.493 (UTC)'
@@ -155,7 +155,7 @@ def test_parser_id_13():
            'recovered': True,
            'alias': 'Sample'
            }
-    record = parser.parser(d, rec)
+    record = parser.parse_id_13(d, rec)
     assert(record["account"]) == "SYSTEM"
     assert(record["description"]) == "System Shutdown"
     assert(record["details"]) == "Shutdown Time: 2017-01-01 21:23:31.105 (UTC)"
@@ -928,6 +928,107 @@ def test_parser_id_6013(): # Do not have
     assert(record["account"]) == "SYSTEM"
     assert(record["description"]) == "System Status"
     assert(record["details"]) == "System Uptime: 2349980 seconds. Time Zone Setting: 480 Pacific Standard Time."
+
+
+def test_parse_unwanted():
+    xmlUnwanted = '<Event xmlns="http://schemas.microsoft.com/win/2004/08/events/event">' +\
+    '<System>' +\
+    '<Provider Name="Microsoft-Windows-Security-Auditing" Guid="{54849625-5478-4994-A5BA-3E3B0328C30D}"/>' +\
+    '<EventID>4826</EventID>' +\
+    '<Version>0</Version>' +\
+    '<Level>0</Level>' +\
+    '<Task>13573</Task>' +\
+    '<Opcode>0</Opcode>' +\
+    '<Keywords>0x8020000000000000</Keywords>' +\
+    '<TimeCreated SystemTime="2018-01-23T01:13:21.021327600Z"/>' +\
+    '<EventRecordID>1</EventRecordID>' +\
+    '<Correlation/>' +\
+    '<Execution ProcessID="4" ThreadID="208"/>' +\
+    '<Channel>Security</Channel>' +\
+    '<Computer>DESKTOP-BPKOOQH</Computer>' +\
+    '<Security/>' +\
+    '</System>' +\
+    '<EventData>' +\
+    '<Data Name="SubjectUserSid">S-1-5-18</Data>' +\
+    '<Data Name="SubjectUserName">-</Data>' +\
+    '<Data Name="SubjectDomainName">-</Data>' +\
+    '<Data Name="SubjectLogonId">0x00000000000003e7</Data>' +\
+    '<Data Name="LoadOptions">-</Data>' +\
+    '<Data Name="AdvancedOptions">%%1843</Data>' +\
+    '<Data Name="ConfigAccessPolicy">%%1846</Data>' +\
+    '<Data Name="RemoteEventLogging">%%1843</Data>' +\
+    '<Data Name="KernelDebug">%%1843</Data>' +\
+    '<Data Name="VsmLaunchType">%%1848</Data>' +\
+    '<Data Name="TestSigning">%%1843</Data>' +\
+    '<Data Name="FlightSigning">%%1843</Data>' +\
+    '<Data Name="DisableIntegrityChecks">%%1843</Data>' +\
+    '<Data Name="HypervisorLoadOptions">-</Data>' +\
+    '<Data Name="HypervisorLaunchType">%%1848</Data>' +\
+    '<Data Name="HypervisorDebug">%%1843</Data>' +\
+    '</EventData>' +\
+    '</Event>'
+    try:
+        d = xmltodict.parse(xmlUnwanted)
+    except ExpatError:
+        xmlUnwanted = xmlUnwanted.replace("\x00", "")  # This can not be the best way to do this...
+        d = xmltodict.parse(xmlUnwanted)
+    sys = d['Event']['System']
+    rec = {'timestamp_utc': sys['TimeCreated']['@SystemTime'],
+           'event_id': sys['EventID'],
+           'description': '',
+           'details': '',
+           'event_source': sys['Provider']['@Name'],
+           'event_log': sys['Channel'],
+           'session_id': '',
+           'account': '',
+           'computer_name': sys['Computer'],
+           'record_number': sys['EventRecordID'],
+           'recovered': True,
+           'alias': 'Sample'
+           }
+    assert(parser.parser(d, rec)) is None
+
+
+def test_parse_wanted():
+    xmlWanted = '<Event xmlns = "http://schemas.microsoft.com/win/2004/08/events/event">' + \
+               '<System>' + \
+               '<Provider Name="Microsoft-Windows-Kernel-General" Guid="{A68CA8B7-004F-D7B6-A698-07E2DE0F1F5D}"/>' + \
+               '<EventID>1</EventID>' + \
+               '<Version>1</Version>' + \
+               '<Level>4</Level>' + \
+               '<Task>5</Task>' + \
+               '<Opcode>0</Opcode>' + \
+               '<Keywords>0x8000000000000010</Keywords>' + \
+               '<TimeCreated SystemTime="2017-01-02T00:28:02.499911900Z"/>' + \
+               '<EventRecordID>521</EventRecordID>' + \
+               '<Correlation/>' + \
+               '<Execution ProcessID="4" ThreadID="372"/>' + \
+               '<Channel>System</Channel>' + \
+               '<Computer>LAPTOP-9KUQNI2Q</Computer>' + \
+               '<Security/>' + \
+               '</System>' + \
+               '<EventData>' + \
+               '<Data Name="NewTime">2017-01-02T00:28:02.500000000Z</Data>' + \
+               '<Data Name="OldTime">2017-01-01T22:19:39.790389600Z</Data>' + \
+               '<Data Name="Reason">2</Data>' + \
+               '</EventData>' + \
+               '</Event>'
+    d = xmltodict.parse(xmlWanted)
+    sys = d['Event']['System']
+    rec = {'timestamp_utc': sys['TimeCreated']['@SystemTime'],
+           'event_id': sys['EventID'],
+           'description': '',
+           'details': '',
+           'event_source': sys['Provider']['@Name'],
+           'event_log': sys['Channel'],
+           'session_id': '',
+           'account': '',
+           'computer_name': sys['Computer'],
+           'record_number': sys['EventRecordID'],
+           'recovered': True,
+           'alias': 'Sample'
+           }
+    assert(parser.parser(d, rec)) is not None
 
 
 # def test_parser():
