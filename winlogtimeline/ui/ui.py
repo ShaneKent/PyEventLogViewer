@@ -89,6 +89,8 @@ class GUI(Tk):
             self.current_project = None
             return
         self.winfo_toplevel().title(f'PyEventLogViewer - {self.current_project.get_path().split(os.path.sep)[-1]}')
+        # Update the UI selected timezone to match the one in the project config
+        self.menu_bar.timezone_offset.set(self.current_project.config['state']['timezone_offset'])
         self.create_new_timeline()
         self.__enable__()
 
@@ -162,6 +164,7 @@ class GUI(Tk):
 
             # Get all records if they weren't provided
             if r is None:
+                # TODO: Modify this to apply any queries that may exist
                 r = self.current_project.get_all_logs()
                 if len(r) == 0:
                     self.__enable__()
@@ -221,7 +224,7 @@ class Timeline(Frame):
         self.update_column_widths(data)
         self.update_tags(parent.current_project.config['events'])
         self.populate_timeline(data)
-        self.sort_column('Timestamp (UTC)', False)
+        self.sort_column('Timestamp', False)
         self._place_widgets()
 
     def _init_widgets(self):
@@ -234,7 +237,7 @@ class Timeline(Frame):
         # Set all columns to be enabled by default
         self.tree['displaycolumns'] = self.master.current_project.config['state']['columns']
         # Add a context menu on right click for enabling and disabling columns
-        if (self.master.system.lower() == "darwin"):
+        if self.master.system.lower() == "darwin":
             self.tree.bind('<Button-2>', self.master.menu_bar.header_popup)  # macOS or Unix
         else:
             self.tree.bind('<Button-3>', self.master.menu_bar.header_popup)  # Windows
@@ -485,6 +488,15 @@ class MenuBar(Menu):
             # Default value and callback function
             self.header_vars[h].set(True)
             self.header_vars[h].trace('w', self.update_column_function)
+        # View -> Timezone
+        self.timezone_menu = Menu(self, **kwargs)
+        self.view_menu.add_cascade(label='Timezone', menu=self.timezone_menu, underline=5)
+        self.timezone_offset = IntVar()
+        self.timezone_offset.set(0)
+        for offset in range(-12, 13):
+            self.timezone_menu.add_radiobutton(label=f'UTC{offset:+d}' if offset != 0 else 'UTC',
+                                               variable=self.timezone_offset, value=offset,
+                                               command=self.update_timezone_offset)
 
         # Tools
         self.tool_menu = Menu(self, **kwargs)
@@ -594,6 +606,18 @@ class MenuBar(Menu):
         if self.master.timeline is None:
             return
         self.master.timeline.tree['displaycolumns'] = columns
+
+    @enable_disable_wrapper(lambda *args: args[0].master)
+    def update_timezone_offset(self, event=None):
+        """
+        Changes the timezone offset and refreshes the timeline. Also marks the project as changed so that the user is
+        prompted to save before closing.
+        :return:
+        """
+        if self.master.current_project is not None:
+            self.master.current_project.config['state']['timezone_offset'] = self.timezone_offset.get()
+            self.master.create_new_timeline()
+            self.master.changes_made = True
 
     def enable_all_columns_function(self, event=None):
         """

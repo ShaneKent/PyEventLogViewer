@@ -28,7 +28,7 @@ class Record:
     @classmethod
     def get_headers(cls):
         return (
-            'Timestamp (UTC)', 'Event ID', 'Description', 'Details', 'Event Source', 'Event Log', 'Session ID',
+            'Timestamp', 'Event ID', 'Description', 'Details', 'Event Source', 'Event Log', 'Session ID',
             'Account', 'Computer Name', 'Record Number', 'Record Hash', 'Source File Alias'
         )
 

@@ -1,9 +1,10 @@
 # Build artifacts
 build/
 dist/
+*.spec
 __pycache__/
 *.egg-info/
 *.egg
+.cache/
 # Pycharm project files
 .idea/
-.cache/

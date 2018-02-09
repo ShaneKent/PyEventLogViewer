@@ -57,8 +57,12 @@ class Project:
             # Enabled/disabled column state
             if 'columns' not in self.config['state'].keys():
                 self.config['state']['columns'] = Record.get_headers()
-            if 'timestamp_offset' not in self.config['state'].keys():
-                self.config['state']['timestamp_offset'] = 0
+            if 'timezone_offset' not in self.config['state'].keys():
+                self.config['state']['timezone_offset'] = 0
+
+            # TODO: remove this. This if for backwards-compatibility only
+            self.config['state']['columns'] = ['Timestamp' if col == 'Timestamp (UTC)' else col for col in
+                                               self.config['state']['columns']]
 
         except Exception as e:
             self.exception = e
@@ -146,9 +150,9 @@ class Project:
         """
         :return: A list of all logs in project storage.
         """
-        offset = self.config['state']['timestamp_offset']
+        offset = self.config['state']['timezone_offset']
         if not isinstance(offset, int) or not (-12 <= offset <= 12):
-            self.config['state']['timestamp_offset'] = offset = 0
+            self.config['state']['timezone_offset'] = offset = 0
 
         query = (f'SELECT strftime(\'%Y-%m-%d %H:%M:%f\', timestamp_utc, \'{offset:+d} hours\'), event_id, description,'
                  f' details, event_source, event_log, session_id, account, computer_name, record_number, recovered, '
