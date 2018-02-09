@@ -55,10 +55,13 @@ def parser(raw, record):
 def parse_id_1(raw, record):
     data = raw["Event"]["EventData"]["Data"]
 
+    sleep_time = get_string(data[0])
+    wake_time = get_string(data[1])
+
     record["account"] = "SYSTEM"
     record["description"] = "Wake Up"
-    record["details"] = f'Wake Time: {data[1]["#text"][0:11]} {data[1]["#text"][11:23]} (UTC) | Sleep Start Time: ' \
-                        f'{data[0]["#text"][0:11]} {data[0]["#text"][11:23]} (UTC)'
+    record["details"] = f'Wake Time: {wake_time[0:11]} {wake_time[11:23]} (UTC) | Sleep Start Time: ' \
+                        f'{sleep_time[0:11]} {sleep_time[11:23]} (UTC)'
 
     return record
 
@@ -70,9 +73,10 @@ def parse_id_12(raw, record):
     record["description"] = "System Start"
 
     if len(data) == 7:
-        # print(data)
-        record["details"] = f'Starting Windows NT version {data[0]["#text"]}. {data[1]["#text"]}. {data[2]["#text"]} ' \
-                            f'at {data[6]["#text"][0:10]} {data[6]["#text"][11:23]} (UTC)'
+        time = get_string(data[6])
+        record[
+            "details"] = f'Starting Windows NT version {get_string(data[0])}. {get_string(data[1])}. {get_string(data[2])} ' \
+                         f'at {time[0:10]} {time[11:23]} (UTC)'
 
     return record
 
@@ -80,9 +84,11 @@ def parse_id_12(raw, record):
 def parse_id_13(raw, record):
     data = raw["Event"]["EventData"]["Data"]
 
+    time = get_string(data)
+
     record["account"] = "SYSTEM"
     record["description"] = "System Shutdown"
-    record["details"] = f'Shutdown Time: {data["#text"][0:10]} {data["#text"][11:23]} (UTC)'
+    record["details"] = f'Shutdown Time: {time[0:10]} {time[11:23]} (UTC)'
 
     return record
 
@@ -93,8 +99,6 @@ def parse_id_41(raw, record):
     record["account"] = "SYSTEM"
     record["description"] = "Shutdown Error"
 
-    #print("Message", data)
-
     return record
 
 
@@ -103,7 +107,7 @@ def parse_id_42(raw, record):
 
     record["account"] = "SYSTEM"
     record["description"] = "Sleep Mode"
-    reason = data[2]["#text"]
+    reason = get_string(data[2])
 
     if reason == "0":
         record["details"] = "Starting Sleep Mode. Reason: Power button/Close lid"
@@ -133,13 +137,15 @@ def parse_id_104(raw, record):
 def parse_id_1074(raw, record):
     data = raw["Event"]["EventData"]["Data"]
 
-    record["account"] = data[6]["#text"].split("\\")[-1]
-    if data[3]["#text"] == "0x500ff":
+    record["account"] = get_string(data[6]).split("\\")[-1]
+    if get_string(data[3]) == "0x500ff":
         record["description"] = "Shutdown Initiated"
     else:
-        record["description"] = "ERROR"
-    record["details"] = f'Cause: {data[4]["#text"]}'
-    record["computer_name"] = data[1]["#text"]
+        # record["description"] = "ERROR"
+        return None
+
+    record["details"] = f'Cause: {get_string(data[4])}'
+    record["computer_name"] = get_string(data[1])
 
     return record
 
@@ -159,10 +165,13 @@ def parse_id_1102(raw, record):
 def parse_id_4616(raw, record):
     data = raw["Event"]["EventData"]["Data"]
 
+    new = get_string(data[5])
+    old = get_string(data[4])
+
     record["description"] = "Time Change"
-    record["account"] = data[1]["#text"]
-    record["details"] = f'Changed To: {data[5]["#text"][0:10]} {data[5]["#text"][11:23]} (UTC) | ' \
-                        f'Previous Time: {data[4]["#text"][0:10]} {data[4]["#text"][11:23]} (UTC)'
+    record["account"] = get_string(data[1])
+    record["details"] = f'Changed To: {new[0:10]} {new[11:23]} (UTC) | ' \
+                        f'Previous Time: {old[0:10]} {old[11:23]} (UTC)'
 
     return record
 
@@ -170,30 +179,37 @@ def parse_id_4616(raw, record):
 def parse_id_4624(raw, record):
     data = raw["Event"]["EventData"]["Data"]
 
-    record["account"] = data[5]["#text"]
-    reason = data[8]["#text"]
+    record["account"] = get_string(data[5])
+    record["session_id"] = get_string(data[7])
+    reason = get_string(data[8])
 
     if reason == "2":
         record["description"] = "Interactive Logon"
     elif reason == "3":
         record["description"] = "Network Connection"
+
+        user = data[11]
         try:
-            record["details"] = f'From: {data[11]["#text"]} ({data[18]["#text"]}) using ' \
-                                f'{data[10]["#text"]} auth as {data[6]["#text"]}\\{data[5]["#text"]}'
+            user = get_string(user)
         except:
-            record["details"] = f'From: {data[11]["@Name"]} ({data[18]["#text"]}) using ' \
-                                f'{data[10]["#text"]} auth as {data[6]["#text"]}\\{data[5]["#text"]}'
+            user = user["@Name"]
+
+        record["details"] = f'From: {user} ({get_string(data[18])}) using ' \
+                            f'{get_string(data[10])} auth as {get_string(data[6])}\\{get_string(data[5])}'
     elif reason == "7":
         record["description"] = "Unlock Workstation"
     elif reason == "10":
         record["description"] = "Remote Interactive Logon"
-        record["details"] = f'From: {data[18]["#text"]} using {data[10]["#text"]} auth as ' \
-                            f'{data[6]["#text"]}\\{data[5]["#text"]}'
+        record["details"] = f'From: {get_string(data[18])} using {get_string(data[10])} auth as ' \
+                            f'{get_string(data[6])}\\{get_string(data[5])}'
     elif reason == "11":
         record["description"] = "Interactive Logon"
-        record["details"] = f'Logon as {data[6]["#text"]}\\{data[5]["#text"]} using cached credentials'
+        record["details"] = f'Logon as {get_string(data[6])}\\{get_string(data[5])} using cached credentials'
+    else:
+        return None
 
-    record["session_id"] = data[7]["#text"]
+    if record["account"] == "ANONYMOUS LOGON":
+        return None
 
     return record
 
@@ -201,15 +217,25 @@ def parse_id_4624(raw, record):
 def parse_id_4634(raw, record):
     data = raw["Event"]["EventData"]["Data"]
 
-    record["account"] = data[4]["#text"]
+    record["session_id"] = get_string(data[3])
+    record["account"] = get_string(data[1])
     record["description"] = "Logoff"
 
-    if data[4]["#text"] == "3":
+    t = get_string(data[4])
+    if t == "2":
+        record["details"] = "Logoff from Interactive session"
+    elif t == "3":
         record["details"] = "End of Network Connection session"
+    elif t == "7":
+        record["details"] = "Unlock Workstation"
+    elif t == "10":
+        record["details"] = "Logoff from Remote Interactive Session"
     else:
-        record["details"] = "EXCLUDED"
+        # record["details"] = "EXCLUDED"
+        return None
 
-    record["session_id"] = data[3]["#text"]
+    if record["account"] == "ANONYMOUS LOGON":
+        return None
 
     return record
 
@@ -217,9 +243,9 @@ def parse_id_4634(raw, record):
 def parse_id_4647(raw, record):
     data = raw["Event"]["EventData"]["Data"]
 
-    record["account"] = data[1]["#text"]
+    record["account"] = get_string(data[1])
     record["description"] = "User Initiated Logoff"
-    record["session_id"] = data[3]["#text"]
+    record["session_id"] = get_string(data[3])
 
     return record
 
@@ -227,11 +253,11 @@ def parse_id_4647(raw, record):
 def parse_id_4720(raw, record):
     data = raw["Event"]["EventData"]["Data"]
 
-    record["account"] = data[4]["#text"]
+    record["account"] = get_string(data[4])
     record["description"] = "Account Created"
-    record["details"] = f'New account name: {data[0]["#text"]} (RID {data[2]["#text"][41:45]}) ' \
-                        f'was created by user account ({data[4]["#text"]})'
-    record["session_id"] = data[6]["#text"]
+    record["details"] = f'New account name: {get_string(data[0])} (RID {get_string(data[2])[41:45]}) ' \
+                        f'was created by user account ({get_string(data[4])})'
+    record["session_id"] = get_string(data[6])
 
     return record
 
@@ -239,64 +265,66 @@ def parse_id_4720(raw, record):
 def parse_id_4722(raw, record):
     data = raw["Event"]["EventData"]["Data"]
 
-    record["account"] = data[4]["#text"]
+    record["account"] = get_string(data[4])
     record["description"] = "Account Enabled"
-    record["details"] = f'The user account {data[0]["#text"]} (RID {data[2]["#text"][41:45]}) ' \
-                        f'was enabled by user account ({data[4]["#text"]})'
-    record["session_id"] = data[6]["#text"]
+    record["details"] = f'The user account {get_string(data[0])} (RID {get_string(data[2])[41:45]}) ' \
+                        f'was enabled by user account ({get_string(data[4])})'
+    record["session_id"] = get_string(data[6])
+
     return record
 
 
 def parse_id_4723(raw, record):
     data = raw["Event"]["EventData"]["Data"]
 
-    record["account"] = data[4]["#text"]
+    record["account"] = get_string(data[4])
     record["description"] = "User Changed Password"
-    record["details"] = f'The password of user account {data[0]["#text"]} (RID {data[2]["#text"][41:45]}) ' \
-                        f'was changed by the user ({data[4]["#text"]})'
-    record["session_id"] = data[6]["#text"]
+    record["details"] = f'The password of user account {get_string(data[0])} (RID {get_string(data[2])[41:45]}) ' \
+                        f'was changed by the user ({get_string(data[4])})'
+    record["session_id"] = get_string(data[6])
+
     return record
 
 
 def parse_id_4724(raw, record):
     data = raw["Event"]["EventData"]["Data"]
 
-    record["account"] = data[4]["#text"]
+    record["account"] = get_string(data[4])
     record["description"] = "Privileged User Reset Password"
-    record["details"] = f'The password of user account {data[0]["#text"]} (RID {data[2]["#text"][41:45]}) ' \
-                        f'was reset by a privileged user account ({data[4]["#text"]})'
-    record["session_id"] = data[6]["#text"]
+    record["details"] = f'The password of user account {get_string(data[0])} (RID {get_string(data[2])[41:45]}) ' \
+                        f'was reset by a privileged user account ({get_string(data[4])})'
+    record["session_id"] = get_string(data[6])
+
     return record
 
 
 def parse_id_4725(raw, record):
     data = raw["Event"]["EventData"]["Data"]
 
-    record["account"] = data[4]["#text"]
+    record["account"] = get_string(data[4])
     record["description"] = "Account Disabled"
-    record["details"] = f'The user account {data[0]["#text"]} (RID {data[2]["#text"][41:45]}) ' \
-                        f'was disabled by user account ({data[4]["#text"]})'
-    record["session_id"] = data[6]["#text"]
+    record["details"] = f'The user account {get_string(data[0])} (RID {get_string(data[2])[41:45]}) ' \
+                        f'was disabled by user account ({get_string(data[4])})'
+    record["session_id"] = get_string(data[6])
+
     return record
 
 
 def parse_id_4726(raw, record):
     data = raw["Event"]["EventData"]["Data"]
 
-    record["account"] = data[4]["#text"]
+    record["account"] = get_string(data[4])
     record["description"] = "Account Deleted"
-    record["details"] = f'The user account {data[0]["#text"]} (RID {data[2]["#text"][41:45]}) ' \
-                        f'was deleted by user account ({data[4]["#text"]})'
-    record["session_id"] = data[6]["#text"]
+    record["details"] = f'The user account {get_string(data[0])} (RID {get_string(data[2])[41:45]}) ' \
+                        f'was deleted by user account ({get_string(data[4])})'
+    record["session_id"] = get_string(data[6])
+
     return record
 
 
 def parse_id_6008(raw, record):
-    data = raw["Event"]["EventData"]["Data"]
-
-    #print("Message", data)
-
     record["description"] = "Shutdown Error"
+
     return record
 
 
@@ -305,6 +333,16 @@ def parse_id_6013(raw, record):
 
     record["account"] = "SYSTEM"
     record["description"] = "System Status"
-    record["details"] = f'System Uptime: {data[4]["#text"]} seconds. Time Zone Setting: {data[6]["#text"]}.'
+
+    uptime = get_string(data[4])
+    timezone = get_string(data[6])
+
+    record["details"] = f'System Uptime: {uptime} seconds. Time Zone Setting: {timezone}.'
 
     return record
+
+
+def get_string(string):
+    if isinstance(string, str):
+        return string
+    return string["#text"]

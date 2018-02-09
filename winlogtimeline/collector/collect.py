@@ -3,6 +3,7 @@ from xml.parsers.expat import ExpatError
 import pyevtx
 from winlogtimeline.util.logs import Record
 from .parser import parser
+from .parser import get_string
 
 from hashlib import md5
 
@@ -63,9 +64,11 @@ def xml_convert(records, source_file_alias, recovered=True):
 
         sys = d['Event']['System']
 
+        event_id = get_string(sys['EventID'])
+
         dictionary = parser(d, {
             'timestamp_utc': sys['TimeCreated']['@SystemTime'],
-            'event_id': sys['EventID'],
+            'event_id': event_id,
             'description': '',
             'details': '',
             'event_source': sys['Provider']['@Name'],
