@@ -11,6 +11,7 @@ from .tag_settings import TagSettings
 from .import_window import ImportWindow
 from .help_window import HelpWindow
 from .export_timeline import ExportWindow
+from .filter_window import FilterWindow
 from .expanded_view import ExpandedView
 import os
 import platform
@@ -599,6 +600,16 @@ class MenuBar(Menu):
         :return:
         """
         wizard = ExportWindow(self, self.master.current_project)
+        wizard.grab_set()
+
+    @enable_disable_wrapper(lambda *args: args[0].master)
+    def filter_function(self, event=None):
+        """
+        TODO: Determine whether or not this function and associated button are necessary.
+        :param event:
+        :return:
+        """
+        wizard = FilterWindow(self, self.master.current_project)
         wizard.grab_set()
 
     @enable_disable_wrapper(lambda *args: args[0].master)
