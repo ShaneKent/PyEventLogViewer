@@ -27,7 +27,7 @@ DEPENDENCIES = ['libevtx-python',
 
 SETUP_DEPENDENCIES = ['pytest-runner']
 
-TEST_DEPENDENCIES = ['pytest']
+TEST_DEPENDENCIES = ['pytest', 'mock']
 
 """Automated argument formatting and setup call"""
 # Grab all of the packages

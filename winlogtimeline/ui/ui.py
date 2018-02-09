@@ -345,14 +345,14 @@ class Timeline(Frame):
         event = self.tree.item(item, "values")
 
         # Query for all of the records that have the specific record hash
-        query = "SELECT * FROM raw_xml_data WHERE record_hash IS '{}'".format(event[-2])
-        cur = self.master.current_project._conn.execute(query)
+        query = "SELECT * FROM raw_xml_data WHERE record_hash = ?"
+        cur = self.master.current_project._conn.execute(query, (event[-2],))
         record = cur.fetchall()[0]
 
         if self.master.expanded_view is None:  # or self.master.side_bar == .!sidebar:
             self.master.expanded_view = ExpandedView(self.master)
 
-        self.master.expanded_view.update(record[1])
+        self.master.expanded_view.update_view(record[1])
 
 
 class StatusBar(Frame):

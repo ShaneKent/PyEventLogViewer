@@ -16,7 +16,7 @@ class Record:
         self.record_number = kwargs['record_number']
         self.recovered = kwargs['recovered']
         self.source_file_alias = kwargs['alias']
-        self.record_hash = self.__hash__()
+        self.record_hash = kwargs.get('record_hash', self.__hash__())
 
     def get_tuple(self):
         return (

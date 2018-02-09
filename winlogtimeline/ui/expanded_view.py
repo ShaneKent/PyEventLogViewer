@@ -25,7 +25,7 @@ class ExpandedView(Toplevel):
         self.container.pack(fill=BOTH, expand=1)
         self.listbox.pack(anchor=W, fill=BOTH, expand=1)
 
-    def update(self, record):
+    def update_view(self, record):
         """
 `       Updates the expanded view record area with the XML for each record.
         :param record: string for the XML that will be displayed.

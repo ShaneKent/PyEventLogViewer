@@ -364,14 +364,16 @@ def test_parser_id_1074():
            'alias': 'Sample'
            }
     record = parser.parse_id_1074(d, rec)  # System    -   Shutdown Initiated
-    data = d["Event"]["EventData"]["Data"]
-    assert(record["account"]) == "SYSTEM"
-    assert(record["details"]) == "Cause: restart"
-    assert(record["computer_name"]) == "LAPTOP-9KUQNI2Q"
-    if data[3]["#text"] == "0x500ff":
-        assert(record["description"]) == "Shutdown Initiated"
-    else:
-        assert(record["description"]) == "ERROR"
+    assert (record) == None  # This is the case because Bruce "tosses" any 1074 records where Data param4 != 0x500ff.
+
+    # data = d["Event"]["EventData"]["Data"]
+    # assert(record["account"]) == "SYSTEM"
+    # assert(record["details"]) == "Cause: restart"
+    # assert(record["computer_name"]) == "LAPTOP-9KUQNI2Q"
+    # if data[3]["#text"] == "0x500ff":
+    #    assert(record["description"]) == "Shutdown Initiated"
+    # else:
+    #    assert(record["description"]) == "ERROR"
 
 
 def test_parser_id_1102():
@@ -601,12 +603,21 @@ def test_parser_id_4634():
            }
     record = parser.parse_id_4634(d, rec)
     data = d["Event"]["EventData"]["Data"]
-    assert(record["account"]) == "7"
+    assert (record["account"]) == "sarah"  # This was being incorrectly parsed originally.
     assert(record["description"]) == "Logoff"
-    if data[4]["#text"] == "3":
+
+    temp = data[4]["#text"]
+    if temp == "2":
+        assert (record["details"]) == "Logoff from Interactive session"
+    elif temp == "3":
         assert (record["details"]) == "End of Network Connection session"
+    elif temp == "7":
+        assert (record["details"]) == "Unlock Workstation"
+    elif temp == "10":
+        assert (record["details"]) == "Logoff from Remote Interactive Session"
     else:
-        assert (record["details"]) == "EXCLUDED"
+        assert (record["details"]) == None
+
     assert (record["session_id"]) == "0x00000000070cb92a"
 
 
