@@ -1,16 +1,18 @@
 {
   "events": {
-    "12": "#82C93F",
-    "13": "#F73B31",
-    "4616": "#B1B2B1",
-    "41": "#FD8727",
-    "6008": "#FD8727",
-    "4720": "#FEE088",
-    "4722": "#FEE088",
-    "4723": "#FEE088",
-    "4724": "#FEE088",
-    "4725": "#FEE088",
-    "4726": "#FEE088",
-    "1102": "#16B0FE"
+    "Microsoft-Windows-Kernel-General::12": "#82C93F",
+    "Microsoft-Windows-UserModePowerService::12": "#82C93F",
+    "Microsoft-Windows-Kernel-General::13": "#F73B31",
+    "Microsoft-Windows-Security-Auditing::4616": "#B1B2B1",
+    "Microsoft-Windows-Kernel-Power::41": "#FD8727",
+    "EventLog::6008": "#FD8727",
+    "Microsoft-Windows-Security-Auditing::4720": "#FEE088",
+    "Microsoft-Windows-Security-Auditing::4722": "#FEE088",
+    "Microsoft-Windows-Security-Auditing::4723": "#FEE088",
+    "Microsoft-Windows-Security-Auditing::4724": "#FEE088",
+    "Microsoft-Windows-Security-Auditing::4725": "#FEE088",
+    "Microsoft-Windows-Security-Auditing::4726": "#FEE088",
+    "Microsoft-Windows-Eventlog::1102": "#16B0FE",
+    "Microsoft-Windows-Eventlog::104": "#16B0FE"
   }
 }

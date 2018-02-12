@@ -13,7 +13,7 @@ class TagSettings(Toplevel):
         self.changes_made = False
 
         # Window Parameters
-        self.title('Record Tag Settings')
+        self.title('Record Highlight Settings')
         self.resizable(width=False, height=False)
 
         # Create and place the widgets
@@ -33,6 +33,7 @@ class TagSettings(Toplevel):
         self.tag_list = Listbox(self.listbox_container)
         self.tag_list.bind('<<ListboxSelect>>', self.callback_update_select_background)
         self.vsb = Scrollbar(self.listbox_container, orient='vertical', command=self.tag_list.yview)
+        self.hsb = Scrollbar(self.listbox_container, orient='horizontal', command=self.tag_list.xview)
         # Buttons for editing tags
         self.add_button = Button(self.container, text='Add', command=self.callback_add_tag, underline=0)
         self.bind('<Alt-a>', self.callback_add_tag)
@@ -79,11 +80,9 @@ class TagSettings(Toplevel):
         # Listbox for tags
         self.tag_list.grid(row=0, column=0, columnspan=4, sticky='NESW')
         self.vsb.grid(row=0, column=4, sticky='NESW')
+        self.hsb.grid(row=1, column=0, sticky='NESW')
         self.listbox_container.columnconfigure(0, weight=4)
         self.listbox_container.grid(row=0, column=0, columnspan=5, padx=padding, pady=padding, sticky='NESW')
-        # Buttons for editing tags
-        self.add_button.grid(row=1, column=3, padx=padding, pady=padding, sticky='E')
-        self.delete_button.grid(row=1, column=4, padx=padding, pady=padding, sticky='E')
         # Red config
         self.r_label.grid(row=2, column=0, sticky='EW')
         self.r_slider.grid(row=2, column=1, columnspan=3, sticky='EW')
@@ -100,10 +99,14 @@ class TagSettings(Toplevel):
         self.slider_container.columnconfigure(1, weight=4)
         self.slider_container.columnconfigure(4, minsize=25)
         self.slider_container.grid(row=2, column=0, columnspan=5, padx=padding, sticky='NESW')
+        # Buttons for editing tags
+        self.add_button.grid(row=5, column=1, padx=padding, pady=padding, sticky='E')
+        self.delete_button.grid(row=5, column=2, padx=padding, pady=padding, sticky='E')
         # Finish and cancel buttons
         self.finish_button.grid(row=5, column=3, padx=padding, pady=padding, sticky='E')
         self.cancel_button.grid(row=5, column=4, padx=padding, pady=padding, sticky='E')
         # Master container frame
+        self.container.columnconfigure(1, minsize=100)
         self.container.pack(side=LEFT, fill=BOTH)
 
     @staticmethod
@@ -237,6 +240,8 @@ class TagPrompt(Toplevel):
 
     def _init_widgets(self):
         self.container = Frame(self)
+        self.source_label = Label(self.container, text='Event Source')
+        self.source_entry = Entry(self.container)
         self.id_label = Label(self.container, text='Event ID')
         id_vcmd = (self.container.register(self.validate_command_id), '%d', '%P')
         self.id_entry = Entry(self.container, validate='key', validatecommand=id_vcmd)
@@ -244,15 +249,17 @@ class TagPrompt(Toplevel):
 
     def _place_widgets(self):
         padding = 3
-        self.id_label.grid(row=0, column=0, columnspan=3, padx=padding, sticky='EW')
-        self.id_entry.grid(row=1, column=0, columnspan=3, padx=padding, sticky='EW')
+        self.source_label.grid(row=0, column=0, columnspan=3, padx=padding, pady=padding, sticky='EW')
+        self.source_entry.grid(row=1, column=0, columnspan=3, padx=padding, pady=padding, sticky='EW')
+        self.id_label.grid(row=2, column=0, columnspan=3, padx=padding, pady=padding, sticky='EW')
+        self.id_entry.grid(row=3, column=0, columnspan=3, padx=padding, pady=padding, sticky='EW')
         self.ok_button.grid(row=4, column=1, padx=padding, sticky='NESW')
         self.container.pack()
 
     @staticmethod
     def validate_command_id(action, value):
         """
-        Restricts entry to only allow numbers.
+        Restricts entry to only allow integers.
         :return:
         """
         if action != '1':
@@ -262,14 +269,14 @@ class TagPrompt(Toplevel):
         return False
 
     def callback_ok(self):
-        tag = self.id_entry.get()
+        tag = f'{self.source_entry.get()}::{self.id_entry.get()}'
         if not tag:
             messagebox.showerror('Error', 'You must enter a value.')
             return
         if tag in self.master.tags:
             messagebox.showerror('Error', 'That tag already exists.')
             return
-        self.master.insert_tag(self.id_entry.get(), '#FFFFFF')
+        self.master.insert_tag(tag, '#FFFFFF')
         self.master.changes_made = True
         self.destroy()
 

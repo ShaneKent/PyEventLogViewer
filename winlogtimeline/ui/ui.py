@@ -282,8 +282,7 @@ class Timeline(Frame):
         self.master.update_status_bar('Populating timeline...')
         with self.master.get_progress_bar_context_manager(len(data)) as progress_bar:
             for i, row in enumerate(data):
-                # TODO: Change the tags to use event source and event id instead of just event id
-                self.tree.insert('', 'end', values=row, tags=str(row[1]))
+                self.tree.insert('', 'end', values=row, tags=f'{row[4]}::{row[1]}')
                 if not i % 100:
                     progress_bar.update_progress(100)
         self.master.update_status_bar('Finished populating timeline.')
@@ -501,8 +500,8 @@ class MenuBar(Menu):
         # Tools
         self.tool_menu = Menu(self, **kwargs)
         self.add_cascade(label='Tools', menu=self.tool_menu, underline=0)
-        # Tools -> Timeline Colors
-        self.tool_menu.add_command(label='Timeline Colors', command=self.color_settings_function, underline=0)
+        # Tools -> Record Highlighting
+        self.tool_menu.add_command(label='Record Highlighting', command=self.color_settings_function, underline=0)
         # Tools -> Import Log
         self.tool_menu.add_command(label='Import Log File', command=self.import_button_function, underline=0,
                                    accelerator='Ctrl+I')
@@ -547,12 +546,13 @@ class MenuBar(Menu):
                 self.master.update_status_bar('Project opened at ' + self.master.current_project.get_path())
             else:
                 self.master.update_status_bar('Failed to open the project at ' + filename)
+                return
 
-        # Load the enabled and disabled
-        for col in self.header_vars.keys():
-            self.header_vars[col].set(col in self.master.current_project.config['state']['columns'])
+            # Load the enabled and disabled columns
+            for col in self.header_vars.keys():
+                self.header_vars[col].set(col in self.master.current_project.config['state']['columns'])
 
-        self.master.changes_made = False
+            self.master.changes_made = False
 
     @enable_disable_wrapper(lambda *args: args[0].master)
     def save_project_function(self, event=None):
