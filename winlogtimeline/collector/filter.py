@@ -32,7 +32,7 @@ def filter_logs(project, config):
     config = [(col, operator, value)]
 
     # Timestamp offset
-    offset = project.config['state']['timestamp_offset']
+    offset = project.config['state']['timezone_offset']
     if not isinstance(offset, int) or not (-12 <= offset <= 12):
         project.config['state']['timestamp_offset'] = offset = 0
 
