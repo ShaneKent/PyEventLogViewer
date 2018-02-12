@@ -343,6 +343,12 @@ def parse_id_6013(raw, record):
 
 
 def get_string(string):
+    """
+    Takes in either a str or an object that has the str inside of an index ["#text"]. This helps parsing of almost
+    all different records.
+    :param string:
+    :return:
+    """
     if isinstance(string, str):
         return string
     return string["#text"]
