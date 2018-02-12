@@ -1,6 +1,6 @@
 from tkinter import *
 from tkinter.ttk import *
-
+import os
 
 class HelpWindow(Toplevel):
     def __init__(self, parent, type):
@@ -30,7 +30,11 @@ class HelpWindow(Toplevel):
             self.email_link.grid_forget()
         elif type == "license":
             self.title('License')
-            self.text.config(text='License info here.')
+
+            with open('../LICENSE', 'r') as content_file:
+                content = content_file.read()
+                self.text.config(text=content)
+
             self.repo_link.grid_forget()
             self.email_link.grid_forget()
         elif type == "contact":
