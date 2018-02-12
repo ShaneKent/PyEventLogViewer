@@ -13,15 +13,15 @@ import xmltodict
 import pyevtx
 
 
-#path to log file
-#record_file = os.path.abspath('tests/System.evtx')
+# path to log file
+# record_file = os.path.abspath('tests/System.evtx')
 
-#with open(record_file, "rb") as file:
-    #file_hash = md5(file.read()).hexdigest()
+# with open(record_file, "rb") as file:
+#     file_hash = md5(file.read()).hexdigest()
 
-#Open the file with pyevtx and parse.
-#log = pyevtx.open(record_file)
-#records = collect.collect_records(log)
+# Open the file with pyevtx and parse.
+# log = pyevtx.open(record_file)
+# records = collect.collect_records(log)
 
 def test_parser_id_1():
     xmlInput = '<Event xmlns = "http://schemas.microsoft.com/win/2004/08/events/event">' +\
