@@ -14,14 +14,14 @@ import pyevtx
 
 
 #path to log file
-# record_file = os.path.abspath('tests/4720.evtx')
+#record_file = os.path.abspath('tests/System.evtx')
 
-# with open(record_file, "rb") as file:
-#     file_hash = md5(file.read()).hexdigest()
+#with open(record_file, "rb") as file:
+    #file_hash = md5(file.read()).hexdigest()
 
 #Open the file with pyevtx and parse.
-# log = pyevtx.open(record_file)
-# records = collect.collect_records(log)
+#log = pyevtx.open(record_file)
+#records = collect.collect_records(log)
 
 def test_parser_id_1():
     xmlInput = '<Event xmlns = "http://schemas.microsoft.com/win/2004/08/events/event">' +\
@@ -320,7 +320,7 @@ def test_parser_id_104():
     assert(record["details"]) == "System event log was cleared by the following account: DESKTOP-C0O9EV0\System"
 
 
-def test_parser_id_1074():
+def test_parser_id_1074_unwanted():
     xmlInput = '<Event xmlns="http://schemas.microsoft.com/win/2004/08/events/event">' +\
     '<System>' +\
     '<Provider Name="User32" Guid="{b0aa8734-56f7-41cc-b2f4-de228e98b946}" EventSourceName="User32"/>' +\
@@ -366,14 +366,59 @@ def test_parser_id_1074():
     record = parser.parse_id_1074(d, rec)  # System    -   Shutdown Initiated
     assert (record) == None  # This is the case because Bruce "tosses" any 1074 records where Data param4 != 0x500ff.
 
-    # data = d["Event"]["EventData"]["Data"]
-    # assert(record["account"]) == "SYSTEM"
-    # assert(record["details"]) == "Cause: restart"
-    # assert(record["computer_name"]) == "LAPTOP-9KUQNI2Q"
-    # if data[3]["#text"] == "0x500ff":
-    #    assert(record["description"]) == "Shutdown Initiated"
-    # else:
-    #    assert(record["description"]) == "ERROR"
+
+def test_parser_id_1074_wanted():
+    xmlInput = '<Event xmlns="http://schemas.microsoft.com/win/2004/08/events/event">' +\
+    '<System>' +\
+    '<Provider Name="User32" Guid="{b0aa8734-56f7-41cc-b2f4-de228e98b946}" EventSourceName="User32"/>' +\
+    '<EventID Qualifiers="32768">1074</EventID>' +\
+    '<Version>0</Version>' +\
+    '<Level>4</Level>' +\
+    '<Task>0</Task>' +\
+    '<Opcode>0</Opcode>' +\
+    '<Keywords>0x8080000000000000</Keywords>' +\
+    '<TimeCreated SystemTime="2017-04-25T02:13:31.902135000Z"/>' +\
+    '<EventRecordID>10296</EventRecordID>' +\
+    '<Correlation/>' +\
+    '<Execution ProcessID="744" ThreadID="900"/>' +\
+    '<Channel>System</Channel>' +\
+    '<Computer>LAPTOP-9KUQNI2Q</Computer>' +\
+    '<Security UserID="S-1-5-21-26884411-4197249062-1617423603-1001"/>' +\
+    '</System>' +\
+    '<EventData>' +\
+    '<Data Name="param1">C:\WINDOWS\system32\winlogon.exe (LAPTOP-9KUQNI2Q)</Data>' +\
+    '<Data Name="param2">LAPTOP-9KUQNI2Q</Data>' +\
+    '<Data Name="param3">No title for this reason could be found</Data>' +\
+    '<Data Name="param4">0x500ff</Data>' +\
+    '<Data Name="param5">power off</Data>' +\
+    '<Data Name="param6"/>' +\
+    '<Data Name="param7">LAPTOP-9KUQNI2Q\sarah</Data>' +\
+    '</EventData>' +\
+    '</Event>'
+    d = xmltodict.parse(xmlInput)
+    sys = d['Event']['System']
+    rec = {'timestamp_utc': sys['TimeCreated']['@SystemTime'],
+           'event_id': sys['EventID'],
+           'description': '',
+           'details': '',
+           'event_source': sys['Provider']['@Name'],
+           'event_log': sys['Channel'],
+           'session_id': '',
+           'account': '',
+           'computer_name': sys['Computer'],
+           'record_number': sys['EventRecordID'],
+           'recovered': True,
+           'alias': 'Sample'
+           }
+    record = parser.parse_id_1074(d, rec)  # System    -   Shutdown Initiated
+    data = d["Event"]["EventData"]["Data"]
+    assert(record["account"]) == "sarah"
+    assert(record["details"]) == "Cause: power off"
+    assert(record["computer_name"]) == "LAPTOP-9KUQNI2Q"
+    if data[3]["#text"] == "0x500ff":
+       assert(record["description"]) == "Shutdown Initiated"
+    else:
+       assert(record["description"]) == "ERROR"
 
 
 def test_parser_id_1102():
@@ -1070,6 +1115,13 @@ def test_parse_wanted():
 #             event_id = rec["event_id"]["#text"]
 #         except TypeError:
 #             event_id = rec["event_id"]
+#
+#
+#         if event_id == "1074":
+#             data = d["Event"]["EventData"]["Data"]
+#             if data[3]["#text"] == "0x500ff":
+#                 print(record)
+#                 break
 #
 #         if event_id == "4722": # Do not have
 #             print(record)
