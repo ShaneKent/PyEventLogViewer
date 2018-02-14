@@ -151,6 +151,14 @@ class GUI(Tk):
 
         return
 
+    def get_filtered_records(self):
+        """
+        Returns a list of records with the filter applied. Meant for use in the export process.
+        :return:
+        """
+        config = self.filter_section.filter_config()
+        return collector.filter_logs(self.current_project, config)
+
     def create_new_timeline(self, headers=None, records=None):
         """
         Function for creating/updating the event section.
@@ -589,8 +597,7 @@ class MenuBar(Menu):
     @enable_disable_wrapper(lambda *args: args[0].master)
     def export_button_function(self, event=None):
         """
-        TODO: Determine whether or not this function and associated button are necessary.
-        :param event:
+        Callback function for File -> Export Timeline. Launches the export window.
         :return:
         """
         wizard = ExportWindow(self, self.master.current_project)

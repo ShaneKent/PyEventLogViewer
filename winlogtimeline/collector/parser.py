@@ -20,9 +20,8 @@ def parse_id_12(raw, record):
 
     if len(data) == 7:
         time = get_string(data[6])
-        record[
-            "details"] = f'Starting Windows NT version {get_string(data[0])}. {get_string(data[1])}. {get_string(data[2])} ' \
-                         f'at {time[0:10]} {time[11:23]} (UTC)'
+        record["details"] = f'Starting Windows NT version {get_string(data[0])}. {get_string(data[1])}. ' \
+                            f'{get_string(data[2])} at {time[0:10]} {time[11:23]} (UTC)'
 
     return record
 
@@ -134,11 +133,11 @@ def parse_id_4624(raw, record):
     elif reason == "3":
         record["description"] = "Network Connection"
 
-        user = data[11]
+        u = data[11]
         try:
-            user = get_string(user)
-        except:
-            user = user["@Name"]
+            user = get_string(u)
+        except (ValueError, TypeError):
+            user = u["@Name"]
 
         record["details"] = f'From: {user} ({get_string(data[18])}) using ' \
                             f'{get_string(data[10])} auth as {get_string(data[6])}\\{get_string(data[5])}'

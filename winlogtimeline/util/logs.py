@@ -3,7 +3,6 @@ import hashlib
 
 class Record:
     def __init__(self, **kwargs):
-        # TODO: Remove/limit string casts once log imports are standardized/filtered properly.
         self.timestamp_utc = kwargs['timestamp_utc']
         self.event_id = kwargs['event_id']
         self.description = kwargs['description']
