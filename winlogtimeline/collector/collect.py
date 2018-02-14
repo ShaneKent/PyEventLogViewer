@@ -6,6 +6,7 @@ from .parser import parser
 from .parser import get_string
 
 from hashlib import md5
+from itertools import chain
 
 
 # Note: It may be useful to take config out of this whole equation. Config could store the default filter configuration,
@@ -31,8 +32,9 @@ def import_log(log_file, alias, project, config, status_callback, progress_conte
 
     # Open the file with pyevtx and parse.
     log = pyevtx.open(log_file)
-    records = collect_records(log)  # + collect_deleted_records(log)
-    xml_records = xml_convert(records, alias)
+    records = collect_records(log)
+    recovered = collect_deleted_records(log)
+    xml_records = xml_convert(records, recovered, alias)
 
     status_callback('Parsing records...')
 
@@ -54,8 +56,10 @@ def import_log(log_file, alias, project, config, status_callback, progress_conte
     return
 
 
-def xml_convert(records, source_file_alias, recovered=True):
-    for record in records:
+def xml_convert(records, recovered, source_file_alias):
+    gen = chain(records, recovered)
+
+    for record in gen:
         try:
             d = xmltodict.parse(record)
         except ExpatError:
@@ -77,11 +81,12 @@ def xml_convert(records, source_file_alias, recovered=True):
             'account': '',
             'computer_name': sys['Computer'],
             'record_number': sys['EventRecordID'],
-            'recovered': recovered,
+            'recovered': 0,  # recovered,
             'alias': source_file_alias
         })
 
         yield [dictionary, record]
+
 
 
 def collect_records(event_file):
@@ -92,6 +97,20 @@ def collect_records(event_file):
     for i in range(event_file.get_number_of_records()):
         yield event_file.get_record(i).xml_string
 
+
+def collect_deleted_records(event_file):
+    """
+    :param event_file: An event log object.
+    :return: A list of event records in the format returned by libevtx-python.
+    """
+    list = []
+    for i in range(event_file.get_number_of_recovered_records()):
+        try:
+            list.append(event_file.get_recovered_record(i).xml_string)
+        except OSError:
+            continue
+
+    return list
 
 def filter_logs(logs, project, config):
     """
