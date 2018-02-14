@@ -1,57 +1,3 @@
-def parser(raw, record):
-    # record["description"]
-    # record["details"]
-    # record["session_id"]
-    # record["account"]
-
-    event_id = record["event_id"]
-
-    if event_id == "1":
-        record = parse_id_1(raw, record)  # System    -   Wake Up
-    elif event_id == "12":
-        record = parse_id_12(raw, record)  # System    -   System Start
-    elif event_id == "13":
-        record = parse_id_13(raw, record)  # System    -   System Shutdown
-    elif event_id == "41":
-        record = parse_id_41(raw, record)  # System    -   Shutdown Error
-    elif event_id == "42":
-        record = parse_id_42(raw, record)  # System    -   Sleep Mode
-    elif event_id == "104":
-        record = parse_id_104(raw, record)  # System    -   Log Cleared
-    elif event_id == "1074":
-        record = parse_id_1074(raw, record)  # System    -   Shutdown Initiated
-    elif event_id == "1102":
-        record = parse_id_1102(raw, record)  # Security  -   Log Cleared
-    elif event_id == "4616":
-        record = parse_id_4616(raw, record)  # System    -   Time Change
-    elif event_id == "4624":
-        record = parse_id_4624(raw, record)  # System    -   Logon Events
-    elif event_id == "4634":
-        record = parse_id_4634(raw, record)  # Security  -   Logoff (Network Connection)
-    elif event_id == "4647":
-        record = parse_id_4647(raw, record)  # Security  -   User-Initiated Logoff
-    elif event_id == "4720":
-        record = parse_id_4720(raw, record)  # Security  -   Account Created
-    elif event_id == "4722":
-        record = parse_id_4722(raw, record)  # Security  -   Account Enabled
-    elif event_id == "4723":
-        record = parse_id_4723(raw, record)  # Security  -   User Changed Password
-    elif event_id == "4724":
-        record = parse_id_4724(raw, record)  # Security  -   Privileged User Reset Password
-    elif event_id == "4725":
-        record = parse_id_4725(raw, record)  # Security  -   Account Disabled
-    elif event_id == "4726":
-        record = parse_id_4726(raw, record)  # Security  -   Account Deleted
-    elif event_id == "6008":
-        record = parse_id_6008(raw, record)  # System    -   Shutdown Error
-    elif event_id == "6013":
-        record = parse_id_6013(raw, record)  # System    -   System Status
-    else:
-        record = None  # EventID isn't being tracked.
-
-    return record
-
-
 def parse_id_1(raw, record):
     data = raw["Event"]["EventData"]["Data"]
 
@@ -128,8 +74,8 @@ def parse_id_104(raw, record):
 
     record["account"] = data["SubjectUserName"]
     record["description"] = "Log Cleared"
-    record[
-        "details"] = f'System event log was cleared by the following account: {data["SubjectDomainName"]}\\{data["Channel"]}'
+    record["details"] = f'System event log was cleared by the following account: ' \
+                        f'{data["SubjectDomainName"]}\\{data["Channel"]}'
 
     return record
 
@@ -338,6 +284,44 @@ def parse_id_6013(raw, record):
     timezone = get_string(data[6])
 
     record["details"] = f'System Uptime: {uptime} seconds. Time Zone Setting: {timezone}.'
+
+    return record
+
+
+parsers = {
+    '1': parse_id_1,  # System    -   Wake Up
+    '12': parse_id_12,  # System    -   System Start
+    '13': parse_id_13,  # System    -   System Shutdown
+    '41': parse_id_41,  # System    -   Shutdown Error
+    '42': parse_id_42,  # System    -   Sleep Mode
+    '104': parse_id_104,  # System    -   Log Cleared
+    '1074': parse_id_1074,  # System    -   Shutdown Initiated
+    '1102': parse_id_1102,  # Security  -   Log Cleared
+    '4616': parse_id_4616,  # System    -   Time Change
+    '4624': parse_id_4624,  # System    -   Logon Events
+    '4634': parse_id_4634,  # Security  -   Logoff (Network Connection)
+    '4647': parse_id_4647,  # Security  -   User-Initiated Logoff
+    '4720': parse_id_4720,  # Security  -   Account Created
+    '4722': parse_id_4722,  # Security  -   Account Enabled
+    '4723': parse_id_4723,  # Security  -   User Changed Password
+    '4724': parse_id_4724,  # Security  -   Privileged User Reset Password
+    '4725': parse_id_4725,  # Security  -   Account Disabled
+    '4726': parse_id_4726,  # Security  -   Account Deleted
+    '6008': parse_id_6008,  # System    -   Shutdown Error
+    '6013': parse_id_6013,  # System    -   System Status
+}
+
+
+def parser(raw, record):
+    event_id = record["event_id"]
+
+    if event_id in parsers.keys():
+        try:
+            record = parsers[event_id](raw, record)
+        except:
+            record['description'] = 'Unable to parse record xml'
+    else:
+        record = None  # EventID isn't being tracked.
 
     return record
 

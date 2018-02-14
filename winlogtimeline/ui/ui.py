@@ -130,18 +130,21 @@ class GUI(Tk):
         def callback():
             # Prepare status bar callback.
             text = '{file}: {status}'.format(file=os.path.basename(file_name), status='{status}')
-
+            error_text = False
             # Start the import log process.
             try:
                 collector.import_log(file_name, alias, self.current_project, '',
                                      lambda s: self.update_status_bar(text.format(status=s)),
                                      self.get_progress_bar_context_manager)
             except Exception as e:
-                self.update_status_bar(f'Error while importing log: {str(e)}')
+                error_text = f'Error while importing log: {str(e)}'
 
             # Create or update the timeline.
             self.create_new_timeline()
             self.changes_made = True
+
+            if error_text:
+                self.update_status_bar(error_text)
 
         t = Thread(target=callback)
         t.start()
