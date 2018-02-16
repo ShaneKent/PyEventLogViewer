@@ -176,7 +176,7 @@ class GUI(Tk):
                 r = self.current_project.get_all_logs()
                 if len(r) == 0:
                     self.__enable__()
-                    self.update_status_bar('Done.')
+                    self.update_status_bar('No records to display. ')
                     return
             if h is None:
                 h = Record.get_headers()
@@ -379,7 +379,7 @@ class StatusBar(Frame):
 
     def _place_widgets(self):
         padding = 2
-        self.status.grid(row=0, column=0, padx=padding, pady=padding, sticky='W')
+        self.status.grid(row=0, column=0, padx=padding, pady=padding+2, sticky='W')
         # self.progress.grid(row=0, column=1, padx=padding, pady=padding, sticky='E')
         self.columnconfigure(0, weight=4)
         self.pack(side=BOTTOM, fill=X)
