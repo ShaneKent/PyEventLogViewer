@@ -163,7 +163,7 @@ class GUI(Tk):
         def callback(h=headers, r=records):
             # Disable all timeline interaction buttons to prevent a timeline duplication bug
             self.__disable__()
-            # self.update_status_bar('Loading records...')
+            self.update_status_bar('Loading records...')
 
             # Get all records if they weren't provided
             if r is None:
@@ -171,7 +171,7 @@ class GUI(Tk):
                 r = self.current_project.get_all_logs()
                 if len(r) == 0:
                     self.__enable__()
-                    #self.update_status_bar('Done.')
+                    self.update_status_bar('Done.')
                     return
             if h is None:
                 h = Record.get_headers()
