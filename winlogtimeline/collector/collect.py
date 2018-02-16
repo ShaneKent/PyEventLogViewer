@@ -63,7 +63,7 @@ def xml_convert(records, recovered, source_file_alias):
         try:
             d = xmltodict.parse(record)
         except ExpatError:
-            record = record.replace("\x00", "")  # This can not be the best way to do this...
+            record = record.replace("\x00", "")  # Escape null characters
             d = xmltodict.parse(record)
 
         sys = d['Event']['System']

@@ -287,6 +287,35 @@ def parse_id_6013(raw, record):
     return record
 
 
+def parse_id_20001(raw, record):
+    data = raw['Event']['UserData']['InstallDeviceID']
+
+    record['description'] = "Device installation completed"
+
+    driver = data['DriverName']
+    device_id = data['DeviceInstanceID']
+    status = data['InstallStatus']
+
+    record['details'] = (f'Driver Management concluded the process to install driver {driver} for Device Instance ID '
+                         f'{device_id} with the following status: {status}')
+
+    return record
+
+
+def parse_id_20003(raw, record):
+    data = raw['Event']['UserData']['AddServiceID']
+
+    record['description'] = 'Service installation complete'
+
+    service = data['ServiceName']
+    device_id = data['DeviceInstanceID']
+    status = data['AddServiceStatus']
+
+    record['details'] = (f'Driver Management has concluded the process to add Service {service} for Device Instance ID '
+                         f'{device_id} with the following status: {status}')
+    return record
+
+
 parsers = {
     '1': parse_id_1,  # System    -   Wake Up
     '12': parse_id_12,  # System    -   System Start
@@ -308,6 +337,8 @@ parsers = {
     '4726': parse_id_4726,  # Security  -   Account Deleted
     '6008': parse_id_6008,  # System    -   Shutdown Error
     '6013': parse_id_6013,  # System    -   System Status
+    '20001': parse_id_20001,  # System    -   Device Installation
+    '20003': parse_id_20003,  # System    -   Service Installation
 }
 
 
