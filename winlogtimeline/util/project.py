@@ -23,7 +23,8 @@ class Project:
 
             # Set up the directory structure
             self._path = project_directory
-            self._log_file = 'logs.sqlite'
+            self._file_name = self._path.split('/')[-1]
+            self._log_file = f'{self._file_name}.sqlite'
             self._log_path = os.path.join(self._path, self._log_file)
             self._config_file = os.path.basename(project_file_path)
             self._config_path = project_file_path
