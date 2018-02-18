@@ -98,7 +98,12 @@ class ExportWindow(Toplevel):
                                     command=self.callback_close_window)
         self.export_button = Button(self.work_container, text="Export", underline=0, command=self.export)
         self.bind("<Alt-c>", self.callback_close_window)
+        self.bind("<Escape>", self.callback_close_window)
         self.bind("<Alt-e>", self.export)
+        self.bind("<Return>", self.export)
+
+        # Focus on window.
+        self.focus_set()
 
     def _place_widgets(self):
         """
@@ -164,7 +169,7 @@ class ExportWindow(Toplevel):
         # Disable the export button by default
         self.export_button.config(state=DISABLED)
 
-    def callback_close_window(self):
+    def callback_close_window(self, event=None):
         """
         Close the window.
         :return:
@@ -247,7 +252,7 @@ class ExportWindow(Toplevel):
         else:
             self.export_button.config(state=DISABLED)
 
-    def export(self):
+    def export(self, event=None):
         """
         Starts the export process.
         :return:

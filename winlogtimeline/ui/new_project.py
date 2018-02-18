@@ -50,7 +50,12 @@ class NewProject(Toplevel):
         self.button_create = Button(self.container, text='Create', underline=1, command=self.callback_create)
         self.button_cancel = Button(self.container, text='Cancel', underline=0, command=self.callback_cancel)
         self.bind('<Alt-r>', self.callback_create)
+        self.bind('<Return>', self.callback_create)
         self.bind('<Alt-c>', self.callback_cancel)
+        self.bind('<Escape>', self.callback_cancel)
+
+        # Focus on window.
+        self.focus_set()
 
         # Default values
         self.sv_workspace.set(os.path.join(util.data.get_appdir(), 'Projects'))

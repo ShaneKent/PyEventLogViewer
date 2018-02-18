@@ -44,7 +44,12 @@ class ImportWindow(Toplevel):
         self.button_import = Button(self.container, text='Import', underline=0, command=self.callback_import)
         self.button_cancel = Button(self.container, text='Cancel', underline=0, command=self.callback_cancel)
         self.bind('<Alt-i>', self.callback_import)
+        self.bind('<Return>', self.callback_import)
         self.bind('<Alt-c>', self.callback_cancel)
+        self.bind('<Escape>', self.callback_cancel)
+
+        # Focus on window.
+        self.focus_set()
 
         # Default values
         self.sv_file.set(os.path.join(util.data.get_appdir(), ''))

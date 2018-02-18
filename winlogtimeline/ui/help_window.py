@@ -66,7 +66,12 @@ class HelpWindow(Toplevel):
 
         # Action block
         self.button_ok = Button(self.main_container, text='Ok', underline=0, command=self.destroy)
-        self.bind('<Alt-o>', self.destroy)
+        self.bind('<Alt-o>', self.callback_close)
+        self.bind('<Return>', self.callback_close)
+        self.bind('<Escape>', self.callback_close)
+
+        # Focus on window.
+        self.focus_set()
 
     def _place_widgets(self):
         """
@@ -88,3 +93,11 @@ class HelpWindow(Toplevel):
         # Specify which portion to auto-expand
         self.container.columnconfigure(0, weight=4)
         self.container.pack(side=LEFT, fill=BOTH)
+
+    def callback_close(self, event=None):
+        """
+        Callback used to close help window. Destroys the widget and returns control to the master
+        without making any changes.
+        :return:
+        """
+        self.destroy()

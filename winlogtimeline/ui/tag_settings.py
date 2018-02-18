@@ -67,9 +67,14 @@ class TagSettings(Toplevel):
         self.b_slider.set(255)
         # Finish and cancel buttons
         self.finish_button = Button(self.container, text='Finish', command=self.callback_finish, underline=0)
-        self.bind('<Alt-f>', self.callback_finish)
         self.cancel_button = Button(self.container, text='Cancel', command=self.callback_cancel, underline=0)
+        self.bind('<Alt-f>', self.callback_finish)
+        self.bind('<Return>', self.callback_finish)
         self.bind('<Alt-c>', self.callback_cancel)
+        self.bind('<Escape>', self.callback_cancel)
+
+        # Focus on window.
+        self.focus_set()
 
     def _place_widgets(self):
         """
