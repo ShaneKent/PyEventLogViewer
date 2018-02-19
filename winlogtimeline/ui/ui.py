@@ -641,6 +641,25 @@ class MenuBar(Menu):
         :return:
         """
         try:
+            # Recreating the timeline header menu helps with issue #85, doesn't fix it.
+            self.timeline_header_menu = Menu(self)
+
+            underlines = set()
+            self.timeline_header_menu.add_command(label='Enable All', command=self.enable_all_columns_function,
+                                                  underline=8)
+            self.timeline_header_menu.add_separator()
+            # Individual headers and associated variables/callbacks
+            for h in Record.get_headers():
+                # Determine which character to underline for shortcuts
+                i = 0
+                while h[i] in underlines:
+                    i += 1
+                underlines.add(h[i])
+
+                # Add the checkbutton
+                self.timeline_header_menu.add_checkbutton(label=h, onvalue=True, offvalue=False,
+                                                          variable=self.header_vars[h], underline=i)
+
             self.timeline_header_menu.tk_popup(event.x_root, event.y_root)
         finally:
             self.timeline_header_menu.grab_release()
