@@ -1,3 +1,5 @@
+import re
+import sys
 import xmltodict
 from xml.parsers.expat import ExpatError
 import pyevtx
@@ -34,7 +36,7 @@ def import_log(log_file, alias, project, config, status_callback, progress_conte
     log = pyevtx.open(log_file)
     records = collect_records(log)
     recovered = collect_deleted_records(log)
-    xml_records = xml_convert(records, recovered, alias)
+    xml_records = chain(xml_convert(records, alias), xml_convert(recovered, alias, recovered=True))
 
     status_callback('Parsing records...')
 
@@ -56,37 +58,69 @@ def import_log(log_file, alias, project, config, status_callback, progress_conte
     return
 
 
-def xml_convert(records, recovered, source_file_alias):
-    gen = chain(records, recovered)
+def build_illegal_charset_regex():
+    """
+    The XML parsing library we use doesn't play too nicely with unicode strings. The regex built by this function will
+    remove a large number of the illegal characters, but not all.
+    :return:
+    """
+    _illegal_unichrs = [(0x00, 0x08), (0x0B, 0x0C), (0x0E, 0x1F),
+                        (0x7F, 0x84), (0x86, 0x9F),
+                        (0xFDD0, 0xFDDF), (0xFFFE, 0xFFFF)]
+    if sys.maxunicode >= 0x10000:  # not narrow build
+        _illegal_unichrs.extend([(0x1FFFE, 0x1FFFF), (0x2FFFE, 0x2FFFF),
+                                 (0x3FFFE, 0x3FFFF), (0x4FFFE, 0x4FFFF),
+                                 (0x5FFFE, 0x5FFFF), (0x6FFFE, 0x6FFFF),
+                                 (0x7FFFE, 0x7FFFF), (0x8FFFE, 0x8FFFF),
+                                 (0x9FFFE, 0x9FFFF), (0xAFFFE, 0xAFFFF),
+                                 (0xBFFFE, 0xBFFFF), (0xCFFFE, 0xCFFFF),
+                                 (0xDFFFE, 0xDFFFF), (0xEFFFE, 0xEFFFF),
+                                 (0xFFFFE, 0xFFFFF), (0x10FFFE, 0x10FFFF)])
 
-    for record in gen:
+    _illegal_ranges = ["%s-%s" % (chr(low), chr(high))
+                       for (low, high) in _illegal_unichrs]
+    return re.compile(r'[{}]'.format(''.join(_illegal_ranges)))
+
+
+def xml_convert(records, source_file_alias, recovered=False):
+    illegal_charset = build_illegal_charset_regex()
+
+    for record in records:
         try:
             d = xmltodict.parse(record)
         except ExpatError:
-            record = record.replace("\x00", "")  # Escape null characters
-            d = xmltodict.parse(record)
+            # The string contains illegal xml characters and is giving xmltodict some trouble. Attempt to sanitize it.
+            subbed_record = re.sub(illegal_charset, '?', record)
+            try:
+                d = xmltodict.parse(subbed_record)
+            except ExpatError:
+                # Unable to sanitize the string using a list of known bad unicode characters. Toss it.
+                if recovered:
+                    print('Tossing recovered record: bad data')
+                else:
+                    print('Tossing non-recovered record: bad data')
+                continue
 
-        sys = d['Event']['System']
+        sys_info = d['Event']['System']
 
-        event_id = get_string(sys['EventID'])
+        event_id = get_string(sys_info['EventID'])
 
         dictionary = parser(d, {
-            'timestamp_utc': sys['TimeCreated']['@SystemTime'],
+            'timestamp_utc': sys_info['TimeCreated']['@SystemTime'],
             'event_id': event_id,
             'description': '',
             'details': '',
-            'event_source': sys['Provider']['@Name'],
-            'event_log': sys['Channel'],
+            'event_source': sys_info['Provider']['@Name'],
+            'event_log': sys_info['Channel'],
             'session_id': '',
             'account': '',
-            'computer_name': sys['Computer'],
-            'record_number': sys['EventRecordID'],
-            'recovered': 0,  # recovered,
+            'computer_name': sys_info['Computer'],
+            'record_number': sys_info['EventRecordID'],
+            'recovered': recovered,
             'alias': source_file_alias
         })
 
-        yield [dictionary, record]
-
+        yield (dictionary, record)
 
 
 def collect_records(event_file):
@@ -112,6 +146,7 @@ def collect_deleted_records(event_file):
 
     return list
 
+
 def filter_logs(logs, project, config):
     """
     When given a list of log objects, returns only those that match the filters defined in config and project. The
@@ -121,7 +156,7 @@ def filter_logs(logs, project, config):
     :param config: A config dictionary.
     :return: A list of logs that satisfy the filters specified in the configuration.
     """
-    #config = [('event_id', '=', 5061)]
+    # config = [('event_id', '=', 5061)]
 
     query = 'SELECT * FROM logs WHERE '
     for constraint in config:
@@ -129,8 +164,8 @@ def filter_logs(logs, project, config):
     query = query[:-5]
     print(query)
 
-    #cur = project._conn.execute(query)
+    # cur = project._conn.execute(query)
 
-    #logs = cur.fetchall()
+    # logs = cur.fetchall()
 
     return logs

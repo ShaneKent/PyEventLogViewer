@@ -137,6 +137,7 @@ class GUI(Tk):
                                      self.get_progress_bar_context_manager)
             except Exception as e:
                 self.update_status_bar(f'Error while importing log: {e.__class__.__name__}: {str(e)}')
+                self.__enable__()
                 return
 
             # Create or update the timeline.
