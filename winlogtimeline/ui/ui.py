@@ -718,12 +718,12 @@ class Filters(Frame):
         self.pack(side=TOP, fill=X)
 
         # Filter Label
-        self.flabel = Label(self, text='Filters:', anchor=W, **kwargs)
-        self.flabel.pack(side=LEFT)
+        #self.flabel = Label(self, text='Filters:', anchor=W, **kwargs)
+        #self.flabel.pack(side=LEFT)
 
         self.filters = []
 
-        self.advanced = Button(self, text="Advanced", command=lambda:self.advanced_filter_function())
+        self.advanced = Button(self, text="Filters", command=lambda:self.advanced_filter_function())
         self.advanced.pack(side=LEFT)
 
         self.clear = Button(self, text="Clear", command=lambda:self.master.create_new_timeline())
