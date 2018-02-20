@@ -91,14 +91,11 @@ def xml_convert(records, source_file_alias, recovered=False):
         except ExpatError:
             # The string contains illegal xml characters and is giving xmltodict some trouble. Attempt to sanitize it.
             subbed_record = re.sub(illegal_charset, '?', record)
+
             try:
                 d = xmltodict.parse(subbed_record)
             except ExpatError:
                 # Unable to sanitize the string using a list of known bad unicode characters. Toss it.
-                if recovered:
-                    print('Tossing recovered record: bad data')
-                else:
-                    print('Tossing non-recovered record: bad data')
                 continue
 
         sys_info = d['Event']['System']
