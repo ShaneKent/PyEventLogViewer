@@ -723,49 +723,11 @@ class Filters(Frame):
 
         self.filters = []
 
-        '''# List of filter columns
-        self.colList = ['- Select Column -']
-        self.create_colList(self.colList)
-
-        # Column variable
-        self.cvar = StringVar(self)
-        self.cvar.set(self.colList[0])
-
-        # Filter columns drop down menu
-        self.columns = OptionMenu(self, self.cvar, *self.colList)
-        self.columns.config(width='17')
-        self.columns.pack(side=LEFT)
-
-        # List of operation columns
-        self.opList = ['- Select Operation -']
-
-        # Operation variable
-        self.ovar = StringVar(self)
-        self.ovar.set(self.opList[0])
-
-        # Filter operations drop down menu
-        self.operations = OptionMenu(self, self.ovar, *self.opList)
-        self.operations.config(width='17')
-        self.operations.pack(side=LEFT)
-
-        # User entered filter value variable
-        self.val = StringVar(self)
-
-        # Filter operation value entry field
-        self.filterVal = Entry(self, textvariable=self.val)
-        self.filterVal.config(width='15')
-        self.filterVal.pack(side=LEFT)
-
-        self.button = Button(self, text="Query", command=lambda: self.apply_filter())
-        self.button.pack(side=LEFT)'''
-
         self.advanced = Button(self, text="Advanced", command=lambda:self.advanced_filter_function())
         self.advanced.pack(side=LEFT)
 
         self.clear = Button(self, text="Clear", command=lambda:self.master.create_new_timeline())
         self.clear.pack(side=LEFT)
-
-        #self.cvar.trace_add('write', lambda *args: self.create_opList())
 
     def __disable__(self):
         self.flabel.config(state=DISABLED)
@@ -775,32 +737,13 @@ class Filters(Frame):
         self.flabel.config(state=NORMAL)
         self.columns.config(state=NORMAL)
 
-    def get_opList(self):
-        return self.opList
+    '''def get_opList(self):
+        return self.opList'''
 
     def create_colList(self, colList):
         tmp = Record.get_headers()
         for col in tmp:
             colList.append(col)
-
-    def create_opList(self):
-        inttype = {'Event ID', 'Record Number', 'Recovered', 'Timestamp (UTC)'}
-        strtype = {'Description', 'Details', 'Event Source', 'Event Log', 'Session ID', 'Account', 'Computer Name',
-                   'Source File Alias', 'Record Hash'}
-        # This shouldn't be hardcoded. Grab from SQL col type or something.
-
-        column = self.cvar.get()
-
-        self.opList = ['- Select Operation -']
-        if column in inttype:
-            self.opList = ['=', '<', '>']
-        elif column in strtype:
-            self.opList = ['Contains']
-
-        self.operations['menu'].delete(0, 'end')
-        for choice in self.opList:
-            self.operations['menu'].add_command(label=choice, command=lambda c=choice: self.ovar.set(c))
-        self.ovar.set(self.opList[0])
 
     def apply_filter(self):
         #config = self.filter_config()
@@ -809,13 +752,6 @@ class Filters(Frame):
         self.master.create_new_timeline(records=logs)
         print('Found {} records'.format(len(logs)))
         #self.master.status_bar.update_status('text')
-
-    def filter_config(self):
-        col = self.cvar.get()
-        config = (col, self.ovar.get(), self.filterVal.get())
-
-        print(config)
-        return [config]
 
     @enable_disable_wrapper(lambda *args: args[0].master)
     def advanced_filter_function(self, event=None):

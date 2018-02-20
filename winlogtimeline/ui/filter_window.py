@@ -107,7 +107,7 @@ class FilterWindow(Toplevel):
 
 
     def create_opList(self):
-        inttype = {'Event ID', 'Record Number', 'Recovered', 'Timestamp (UTC)'}
+        inttype = {'Event ID', 'Record Number', 'Recovered', 'Timestamp (UTC)', 'Timestamp'}
         strtype = {'Description', 'Details', 'Event Source', 'Event Log', 'Session ID', 'Account', 'Computer Name',
                    'Source File Alias', 'Record Hash'}
         # This shouldn't be hardcoded. Grab from SQL col type or something.
