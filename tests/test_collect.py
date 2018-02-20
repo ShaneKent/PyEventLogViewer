@@ -8,7 +8,7 @@
 import os
 from winlogtimeline.collector import collect
 from winlogtimeline.util import project
-from winlogtimeline.ui import ui, new_project
+from winlogtimeline.ui import ui
 from hashlib import md5
 import shutil
 import xmltodict
