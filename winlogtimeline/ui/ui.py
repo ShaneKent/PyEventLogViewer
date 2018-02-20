@@ -637,9 +637,6 @@ class MenuBar(Menu):
                 v.set(True)
 
     def build_timeline_header_menu(self, type="dropdown", event=None, **kwargs):
-        if self.timeline_header_menu is not None:
-            self.timeline_header_menu.destroy()
-
         self.timeline_header_menu = Menu(self, **kwargs)
         if type == "dropdown":
             self.view_menu.add_cascade(label='Timeline Headers', menu=self.timeline_header_menu, underline=0)
