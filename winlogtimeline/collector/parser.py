@@ -317,41 +317,75 @@ def parse_id_20003(raw, record):
 
 
 parsers = {
-    '1': parse_id_1,  # System    -   Wake Up
-    '12': parse_id_12,  # System    -   System Start
-    '13': parse_id_13,  # System    -   System Shutdown
-    '41': parse_id_41,  # System    -   Shutdown Error
-    '42': parse_id_42,  # System    -   Sleep Mode
-    '104': parse_id_104,  # System    -   Log Cleared
-    '1074': parse_id_1074,  # System    -   Shutdown Initiated
-    '1102': parse_id_1102,  # Security  -   Log Cleared
-    '4616': parse_id_4616,  # System    -   Time Change
-    '4624': parse_id_4624,  # System    -   Logon Events
-    '4634': parse_id_4634,  # Security  -   Logoff (Network Connection)
-    '4647': parse_id_4647,  # Security  -   User-Initiated Logoff
-    '4720': parse_id_4720,  # Security  -   Account Created
-    '4722': parse_id_4722,  # Security  -   Account Enabled
-    '4723': parse_id_4723,  # Security  -   User Changed Password
-    '4724': parse_id_4724,  # Security  -   Privileged User Reset Password
-    '4725': parse_id_4725,  # Security  -   Account Disabled
-    '4726': parse_id_4726,  # Security  -   Account Deleted
-    '6008': parse_id_6008,  # System    -   Shutdown Error
-    '6013': parse_id_6013,  # System    -   System Status
-    '20001': parse_id_20001,  # System    -   Device Installation
-    '20003': parse_id_20003,  # System    -   Service Installation
+    'Microsoft-Windows-Power-Troubleshooter': {
+        '1': parse_id_1,  # [System] Wake Up
+    },
+    'Microsoft-Windows-Kernel-General': {
+        '12': parse_id_12,  # [System] System Start
+        '13': parse_id_13,  # [System] System Shutdown
+    },
+    'Microsoft-Windows-Kernel-Power': {
+        '41': parse_id_41,  # [System] Shutdown Error
+        '42': parse_id_42,  # [System] Sleep Mode
+    },
+    'Microsoft-Windows-Eventlog': {
+        '104': parse_id_104,  # [System] Log Cleared
+        '1102': parse_id_1102,  # [Security] Log Cleared
+    },
+    'User32': {
+        '1074': parse_id_1074,  # [System] Shutdown Initiated
+    },
+    'Microsoft-Windows-Security-Auditing': {
+        '4616': parse_id_4616,  # [System] Time Change
+        '4624': parse_id_4624,  # [System] Logon Events
+        '4634': parse_id_4634,  # [Security] Logoff (Network Connection)
+        '4647': parse_id_4647,  # [Security] User-Initiated Logoff
+        '4720': parse_id_4720,  # [Security] Account Created
+        '4722': parse_id_4722,  # [Security] Account Enabled
+        '4723': parse_id_4723,  # [Security] User Changed Password
+        '4724': parse_id_4724,  # [Security] Privileged User Reset Password
+        '4725': parse_id_4725,  # [Security] Account Disabled
+        '4726': parse_id_4726,  # [Security] Account Deleted
+    },
+    'EventLog': {
+        '6008': parse_id_6008,  # [System] Shutdown Error
+        '6013': parse_id_6013,  # [System] System Status
+    },
+    'Microsoft-Windows-UserPnp': {
+        '20001': parse_id_20001,  # [System] Device Installation
+        '20003': parse_id_20003,  # [System] Service Installation
+    }
 }
 
 
-def parser(raw, record):
-    event_id = record["event_id"]
+def user_parser(raw, record):
+    """
+    This is the parser used when a record is parsed because the user specified it. Records that have a built-in parser
+    will not be passed to this method.
+    :param raw:
+    :param record:
+    :return:
+    """
+    record['description'] = 'User defined record'
 
-    if event_id in parsers.keys():
+    return record
+
+
+def parser(raw, record):
+    parse_record = parsers.get(record['event_source'], {}).get(record['event_id'], None)
+
+    # Disabled until user-defined scraping is added
+    # if parse_record is None:
+    #     if user_parsers.get(record['event_source'], {}).get(record['event_id'], None) is not None:
+    #         parse_record = user_parser
+
+    if parse_record is not None:
         try:
-            record = parsers[event_id](raw, record)
+            record = parse_record(raw, record)
         except:
             record['description'] = 'Unable to parse record xml'
     else:
-        record = None  # EventID isn't being tracked.
+        record = None
 
     return record
 

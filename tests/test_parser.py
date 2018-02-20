@@ -1,9 +1,9 @@
 # Run Instructions:
-    # All tests: python3 setup.py test
-    # Just this file: pytest tests/test_parser.py -s
-    # Update code base being tested
-    # pip3 install --upgrade .
-    # pip3 install --user --upgrade .
+# All tests: python3 setup.py test
+# Just this file: pytest tests/test_parser.py -s
+# Update code base being tested
+# pip3 install --upgrade .
+# pip3 install --user --upgrade .
 
 import os
 from xml.parsers.expat import ExpatError
@@ -1049,7 +1049,7 @@ def test_parse_unwanted():
 def test_parse_wanted():
     xmlWanted = '<Event xmlns = "http://schemas.microsoft.com/win/2004/08/events/event">' + \
                '<System>' + \
-               '<Provider Name="Microsoft-Windows-Kernel-General" Guid="{A68CA8B7-004F-D7B6-A698-07E2DE0F1F5D}"/>' + \
+               '<Provider Name="Microsoft-Windows-Power-Troubleshooter" Guid="{A68CA8B7-004F-D7B6-A698-07E2DE0F1F5D}"/>' + \
                '<EventID>1</EventID>' + \
                '<Version>1</Version>' + \
                '<Level>4</Level>' + \

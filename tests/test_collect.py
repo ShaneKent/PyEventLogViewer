@@ -1,17 +1,15 @@
 # Run Instructions:
-    # All tests: python3 setup.py test
-    # Just this file: pytest tests/test_collect.py -s
-    # Update code base being tested
-    # pip3 install --upgrade .
-    # pip3 install --user --upgrade .
-
+# All tests: python3 setup.py test
+# Just this file: pytest tests/test_collect.py -s
+# Update code base being tested
+# pip3 install --upgrade .
+# pip3 install --user --upgrade .
 import os
 from winlogtimeline.collector import collect
 from winlogtimeline.util import project
 from winlogtimeline.ui import ui
 from hashlib import md5
 import shutil
-import xmltodict
 import pyevtx
 import mock
 
@@ -29,15 +27,14 @@ text = '{file}: {status}'.format(file=os.path.basename(record_file), status='{st
 @mock.patch('winlogtimeline.collector.collect.xml_convert')
 @mock.patch.object(proj, 'write_log_data')
 @mock.patch.object(proj, 'write_verification_data')
-
 def test_import_log_func_calls(mock_verify_data, mock_log_data, mock_xml, mock_collect):
     collect.import_log(record_file, 'Secure', proj, '', lambda s: gui.update_status_bar(text.format(status=s)),
                        gui.get_progress_bar_context_manager)
 
-    assert(mock_collect.called) == True
-    assert(mock_xml.called) == True
-    #assert(mock_log_data.called) == True # why is this false not true? Issues with loop possibly?
-    assert(mock_verify_data.called) == True
+    assert mock_collect.called
+    assert mock_xml.called
+    # assert mock_log_data.called  # why is this false not true? Issues with loop possibly?
+    assert mock_verify_data.called
 
 
 @mock.patch('winlogtimeline.collector.parser.parser')
@@ -49,7 +46,8 @@ def test_xml_convert(mock_parser):
     log = pyevtx.open(record_file)
     records = collect.collect_records(log)  # + collect_deleted_records(log)
     xml_records = collect.xml_convert(records, file_hash, 'test')
-    #assert(mock_parser.called) == True # Another issue with loops?
+    # assert mock_parser.called  # Another issue with loops?
+
 
 # Remove testing project
 proj.close()

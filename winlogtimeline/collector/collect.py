@@ -119,7 +119,6 @@ def xml_convert(records, source_file_alias, recovered=False):
 
         yield (dictionary, record)
 
-
 def collect_records(event_file):
     """
     :param event_file: An event log object.
