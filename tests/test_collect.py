@@ -1,11 +1,16 @@
 # Run Instructions:
-    # python3 setup.py test
+    # All tests: python3 setup.py test
+    # Just this file: pytest tests/test_collect.py -s
+    # Update code base being tested
+    # pip3 install --upgrade .
+    # pip3 install --user --upgrade .
 
 import os
 from winlogtimeline.collector import collect
 from winlogtimeline.util import project
-from winlogtimeline.ui import ui
+from winlogtimeline.ui import ui, new_project
 from hashlib import md5
+import shutil
 import xmltodict
 import pyevtx
 import mock
@@ -15,7 +20,7 @@ gui = ui.GUI()
 # path to log file
 record_file = os.path.abspath('tests/Security.evtx')
 # test project Instance
-proj = project.Project('/Users/zachmonroe/Library/Application Support/PyEventLogTimeline/Projects/New Project/New Project.elv')
+proj = project.Project(os.path.abspath('tests/TestProject/TestProject.elv'))
 # status text
 text = '{file}: {status}'.format(file=os.path.basename(record_file), status='{status}')
 
@@ -43,29 +48,8 @@ def test_xml_convert(mock_parser):
     # Open the file with pyevtx and parse.
     log = pyevtx.open(record_file)
     records = collect.collect_records(log)  # + collect_deleted_records(log)
-    xml_records = collect.xml_convert(records, file_hash)
+    xml_records = collect.xml_convert(records, file_hash, 'test')
     #assert(mock_parser.called) == True # Another issue with loops?
 
-
-
-# def filter_logs(logs, project, config):
-#     """
-#     When given a list of log objects, returns only those that match the filters defined in config and project. The
-#     filters in project take priority over config.
-#     :param logs: A list of log objects. Logs must be in the format returned by winlogtimeline.util.logs.parse_record.
-#     :param project: A project instance.
-#     :param config: A config dictionary.
-#     :return: A list of logs that satisfy the filters specified in the configuration.
-#     """
-#     config = [('event_id', '=', 5061)]
-#
-#     query = 'SELECT * FROM logs WHERE '
-#     for constraint in config:
-#         query += '{} {} {} AND '.format(*constraint)
-#     query = query[:-5]
-#
-#     cur = project._conn.execute(query)
-#
-#     logs = cur.fetchall()
-#
-#     return logs
+# Remove testing project
+shutil.rmtree(os.path.abspath('tests/TestProject'))
