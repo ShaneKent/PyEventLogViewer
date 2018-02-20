@@ -1,6 +1,7 @@
 # Run Instructions:
-    # python3 setup.py test
-    # pytest tests/test_parser.py -s
+    # All tests: python3 setup.py test
+    # Just this file: pytest tests/test_parser.py -s
+    # Update code base being tested
     # pip3 install --upgrade .
     # pip3 install --user --upgrade .
 
