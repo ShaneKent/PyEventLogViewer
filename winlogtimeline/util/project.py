@@ -118,6 +118,7 @@ class Project:
                  '(timestamp_utc, event_id, description, details, event_source, event_log, session_id, account,'
                  ' computer_name, record_number, recovered, record_hash, alias) '
                  'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+
         values = (
             record.timestamp_utc, record.event_id, record.description, record.details, record.event_source,
             record.event_log, record.session_id, record.account, record.computer_name, record.record_number,
