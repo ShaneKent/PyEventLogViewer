@@ -379,7 +379,7 @@ class StatusBar(Frame):
 
     def _place_widgets(self):
         padding = 2
-        self.status.grid(row=0, column=0, padx=padding, pady=padding+2, sticky='W')
+        self.status.grid(row=0, column=0, padx=padding, pady=padding + 2, sticky='W')
         # self.progress.grid(row=0, column=1, padx=padding, pady=padding, sticky='E')
         self.columnconfigure(0, weight=4)
         self.pack(side=BOTTOM, fill=X)
@@ -473,13 +473,12 @@ class MenuBar(Menu):
         # View
         self.view_menu = Menu(self, **kwargs)
         self.add_cascade(label='View', menu=self.view_menu, underline=0)
+
         # View -> Timeline Headers
-        self.timeline_header_menu = Menu(self, **kwargs)
-        self.view_menu.add_cascade(label='Timeline Headers', menu=self.timeline_header_menu, underline=0)
+        self.timeline_header_menu = None
         self.header_vars = dict()
+        self.header_pairs = list()
         underlines = set()
-        self.timeline_header_menu.add_command(label='Enable All', command=self.enable_all_columns_function, underline=8)
-        self.timeline_header_menu.add_separator()
         # Individual headers and associated variables/callbacks
         for h in Record.get_headers():
             # Initialize the variable indicating whether or not the column is enabled
@@ -489,12 +488,13 @@ class MenuBar(Menu):
             while h[i] in underlines:
                 i += 1
             underlines.add(h[i])
-            # Add the checkbutton
-            self.timeline_header_menu.add_checkbutton(label=h, onvalue=True, offvalue=False,
-                                                      variable=self.header_vars[h], underline=i)
+            self.header_pairs.append((h, i))
             # Default value and callback function
             self.header_vars[h].set(True)
             self.header_vars[h].trace('w', self.update_column_function)
+
+        self.build_timeline_header_menu(type="dropdown", **kwargs)
+
         # View -> Timezone
         self.timezone_menu = Menu(self, **kwargs)
         self.view_menu.add_cascade(label='Timezone', menu=self.timezone_menu, underline=5)
@@ -635,32 +635,32 @@ class MenuBar(Menu):
             if not v.get():
                 v.set(True)
 
+    def build_timeline_header_menu(self, type="dropdown", event=None, **kwargs):
+        if self.timeline_header_menu is not None:
+            self.timeline_header_menu.destroy()
+
+        self.timeline_header_menu = Menu(self, **kwargs)
+        if type == "dropdown":
+            self.view_menu.add_cascade(label='Timeline Headers', menu=self.timeline_header_menu, underline=0)
+
+        self.timeline_header_menu.add_command(label='Enable All', command=self.enable_all_columns_function, underline=8)
+        self.timeline_header_menu.add_separator()
+        # Individual headers and associated variables/callbacks
+        for pair in self.header_pairs:
+            # Add a checkbutton per pair
+            self.timeline_header_menu.add_checkbutton(label=pair[0], onvalue=True, offvalue=False,
+                                                      variable=self.header_vars[pair[0]], underline=pair[1])
+
+        if type != "dropdown":
+            self.timeline_header_menu.tk_popup(event.x_root, event.y_root)
+
     def header_popup(self, event=None):
         """
         Event callback used when the user right clicks on the timeline. Should bring up the header enable/disable menu.
         :return:
         """
         try:
-            # Recreating the timeline header menu helps with issue #85, doesn't fix it.
-            self.timeline_header_menu = Menu(self)
-
-            underlines = set()
-            self.timeline_header_menu.add_command(label='Enable All', command=self.enable_all_columns_function,
-                                                  underline=8)
-            self.timeline_header_menu.add_separator()
-            # Individual headers and associated variables/callbacks
-            for h in Record.get_headers():
-                # Determine which character to underline for shortcuts
-                i = 0
-                while h[i] in underlines:
-                    i += 1
-                underlines.add(h[i])
-
-                # Add the checkbutton
-                self.timeline_header_menu.add_checkbutton(label=h, onvalue=True, offvalue=False,
-                                                          variable=self.header_vars[h], underline=i)
-
-            self.timeline_header_menu.tk_popup(event.x_root, event.y_root)
+            self.build_timeline_header_menu("popup", event)
         finally:
             self.timeline_header_menu.grab_release()
 
