@@ -116,7 +116,7 @@ class FilterWindow(Toplevel):
 
         self.opList = ['- Select Operation -']
         if column in inttype:
-            self.opList = ['=', '<', '>']
+            self.opList = ['=', '<', '>', 'In']
         elif column in strtype:
             self.opList = ['Contains']
 

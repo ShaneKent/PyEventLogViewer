@@ -24,6 +24,8 @@ def filter_logs(project, config):
         if operator == 'Contains':
             operator = 'like'
             value = "'%" + value + "%'"
+        elif operator == 'In':
+            value = "(" + value + ")" #Add parentheses for sql list
 
         #columns = [col_info[1] for col_info in info]
         idx = headers.index(col)

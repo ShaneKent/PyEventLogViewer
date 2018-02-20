@@ -718,15 +718,15 @@ class Filters(Frame):
         self.pack(side=TOP, fill=X)
 
         # Filter Label
-        #self.flabel = Label(self, text='Filters:', anchor=W, **kwargs)
-        #self.flabel.pack(side=LEFT)
+        # self.flabel = Label(self, text='Filters:', anchor=W, **kwargs)
+        # self.flabel.pack(side=LEFT)
 
         self.filters = []
 
-        self.advanced = Button(self, text="Filters", command=lambda:self.advanced_filter_function())
+        self.advanced = Button(self, text="Filters", command=lambda: self.advanced_filter_function())
         self.advanced.pack(side=LEFT)
 
-        self.clear = Button(self, text="Clear", command=lambda:self.master.create_new_timeline())
+        self.clear = Button(self, text="Clear", command=lambda: self.master.create_new_timeline())
         self.clear.pack(side=LEFT)
 
     def __disable__(self):
@@ -746,12 +746,12 @@ class Filters(Frame):
             colList.append(col)
 
     def apply_filter(self):
-        #config = self.filter_config()
+        # config = self.filter_config()
         logs = collector.filter_logs(self.master.current_project, self.filters)
 
         self.master.create_new_timeline(records=logs)
         print('Found {} records'.format(len(logs)))
-        #self.master.status_bar.update_status('text')
+        # self.master.status_bar.update_status('text')
 
     @enable_disable_wrapper(lambda *args: args[0].master)
     def advanced_filter_function(self, event=None):
