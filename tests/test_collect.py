@@ -52,4 +52,5 @@ def test_xml_convert(mock_parser):
     #assert(mock_parser.called) == True # Another issue with loops?
 
 # Remove testing project
+proj.close()
 shutil.rmtree(os.path.abspath('tests/TestProject'))
