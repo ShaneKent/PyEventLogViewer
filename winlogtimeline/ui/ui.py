@@ -52,8 +52,10 @@ class GUI(Tk):
         self.system = platform.system()
         self.changes_made = False
 
-        if self.program_config["startup_window"]:
+        if self.program_config.get("startup_window", None):
             self.startup_window = StartupWindow(self)
+        else:
+            print("NOTE: Please delete your local 'config.json' file.")
 
         self.__disable__()
         self.protocol('WM_DELETE_WINDOW', self.__destroy__)
