@@ -11,7 +11,7 @@ from winlogtimeline.ui import ui
 from hashlib import md5
 import shutil
 import pyevtx
-import mock
+import unittest.mock as mock
 
 # new GUI instance for testing
 gui = ui.GUI()
@@ -23,17 +23,15 @@ proj = project.Project(os.path.abspath('tests/TestProject/TestProject.elv'))
 text = '{file}: {status}'.format(file=os.path.basename(record_file), status='{status}')
 
 
-@mock.patch('winlogtimeline.collector.collect.collect_records')
-@mock.patch('winlogtimeline.collector.collect.xml_convert')
 @mock.patch.object(proj, 'write_log_data')
 @mock.patch.object(proj, 'write_verification_data')
-def test_import_log_func_calls(mock_verify_data, mock_log_data, mock_xml, mock_collect):
+def test_import_log_func_calls(mock_verify_data, mock_log_data):
     collect.import_log(record_file, 'Secure', proj, '', lambda s: gui.update_status_bar(text.format(status=s)),
                        gui.get_progress_bar_context_manager)
 
-    assert mock_collect.called
-    assert mock_xml.called
-    # assert mock_log_data.called  # why is this false not true? Issues with loop possibly?
+    # assert mock_collect.called
+    # assert mock_xml.called
+    assert mock_log_data.called  # why is this false not true? Issues with loop possibly?
     assert mock_verify_data.called
 
 
