@@ -132,6 +132,8 @@ class FilterWindow(Toplevel):
         label = ' '.join(config[:3])
 
         #Disallow empty values
+        if config[0] == '- Select Column -' or config[1] == '- Select Operation -':
+            return
         if config[2] == '' or config[2] == None:
             print('No value entered!')
             return
