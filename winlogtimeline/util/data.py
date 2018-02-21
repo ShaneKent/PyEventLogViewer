@@ -38,6 +38,29 @@ def open_config():
     return config
 
 
+def write_config(data):
+    """
+    Helper method for writing to the config
+    :return:
+    """
+    # Get the path to the default config file
+    config_template_path = get_package_data_path(__file__, 'config', 'config.json')
+
+    # Get the path to the working config file
+    config_path = os.path.join(get_appdir(), 'config.json')
+
+    # Copy the config file to the application data directory. This allows for user edits in
+    # a non-elevated context, and allows us to keep a default version of the config.
+    if not os.path.isfile(config_path):
+        shutil.copy2(config_template_path, config_path)
+
+    with open(config_path, "w") as config_file:
+        json.dump(data, config_file)
+
+    return
+
+
+
 def get_appdir():
     """
     Helper method for accessing the application directory.

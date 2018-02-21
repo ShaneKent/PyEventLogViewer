@@ -14,5 +14,6 @@
     "Microsoft-Windows-Security-Auditing::4726": "#FEE088",
     "Microsoft-Windows-Eventlog::1102": "#16B0FE",
     "Microsoft-Windows-Eventlog::104": "#16B0FE"
-  }
+  },
+  "startup_window": true
 }

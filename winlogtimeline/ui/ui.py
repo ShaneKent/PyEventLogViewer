@@ -13,6 +13,7 @@ from .help_window import HelpWindow
 from .export_timeline import ExportWindow
 from .filter_window import FilterWindow
 from .expanded_view import ExpandedView
+from .startup_window import StartupWindow
 import os
 import platform
 
@@ -50,6 +51,9 @@ class GUI(Tk):
         self.enabled = True
         self.system = platform.system()
         self.changes_made = False
+
+        if self.program_config["startup_window"]:
+            self.startup_window = StartupWindow(self)
 
         self.__disable__()
         self.protocol('WM_DELETE_WINDOW', self.__destroy__)

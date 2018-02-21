@@ -25,7 +25,7 @@ class HelpWindow(Toplevel):
                                   "Sarah Stephens, and Shane Kent. At the time of developing this\n"
                                   "project, all the contributors were studying toward receiving\n"
                                   "their BS in Computer Engineering from Cal Poly, San Luis Obispo.\n\n"
-                                  "Version W.X.Y.Z")
+                                  "Version 0.2.0-alpha")
             self.repo_link.grid_forget()
             self.email_link.grid_forget()
         elif type == "license":
