@@ -25,12 +25,17 @@ def open_config():
     config_template_path = get_package_data_path(__file__, 'config', 'config.json')
 
     # Get the path to the working config file
-    config_path = os.path.join(get_appdir(), 'config.json')
+    config_folder_path = get_appdir()
+    config_path = os.path.join(config_folder_path, 'config.json')
+
+    # Make sure that the config directory exists
+    if not os.path.exists(config_folder_path):
+        os.makedirs(config_folder_path)
 
     # Copy the config file to the application data directory. This allows for user edits in
     # a non-elevated context, and allows us to keep a default version of the config.
     if not os.path.isfile(config_path):
-        shutil.copy2(config_template_path, config_path)
+        shutil.copy(config_template_path, config_folder_path)
 
     with open(config_path) as config_file:
         config = json.load(config_file)
