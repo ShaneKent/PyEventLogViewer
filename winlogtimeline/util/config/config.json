@@ -1,7 +1,6 @@
 {
   "events": {
     "Microsoft-Windows-Kernel-General::12": "#82C93F",
-    "Microsoft-Windows-UserModePowerService::12": "#82C93F",
     "Microsoft-Windows-Kernel-General::13": "#F73B31",
     "Microsoft-Windows-Security-Auditing::4616": "#B1B2B1",
     "Microsoft-Windows-Kernel-Power::41": "#FD8727",

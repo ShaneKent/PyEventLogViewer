@@ -28,17 +28,21 @@ class TagSettings(Toplevel):
         """
         # Master container frame
         self.container = Frame(self)
-        # Listbox for tags
+        # Treeview for tags
         self.listbox_container = Frame(self.container)
-        self.tag_list = Listbox(self.listbox_container)
-        self.tag_list.bind('<<ListboxSelect>>', self.callback_update_select_background)
+        self.tag_list = Treeview(self.listbox_container, columns=('source', 'id'), show='headings')
+        # Set up the tree headings
+        self.tag_list.heading('source', text='Event Source', command=lambda: self.sort_column('id', False))
+        self.tag_list.heading('id', text='Event ID', command=lambda: self.sort_column('source', False))
+        # Set up the tree columns
+        self.tag_list.column('id', minwidth=0, width=60, stretch=NO)
+        self.tag_list.column('source', minwidth=0, width=100, stretch=YES)
+        self.tag_list.bind('<<TreeviewSelect>>', self.callback_update_select_background)
         self.vsb = Scrollbar(self.listbox_container, orient='vertical', command=self.tag_list.yview)
         self.hsb = Scrollbar(self.listbox_container, orient='horizontal', command=self.tag_list.xview)
-        # Buttons for editing tags
-        self.add_button = Button(self.container, text='Add', command=self.callback_add_tag, underline=0)
-        self.bind('<Alt-a>', self.callback_add_tag)
-        self.delete_button = Button(self.container, text='Delete', command=self.callback_remove_tag, underline=0)
-        self.bind('<Alt-d>', self.callback_remove_tag)
+        # self.color_label = Label(self.container, text='The quick brown fox jumps over the lazy dog',
+        #                          background='#FFFFFF', relief=SUNKEN, borderwidth=1)
+        self.color_block = Canvas(self.container, width=300, height=20, relief=SUNKEN)
         # Sliders
         self.slider_container = Frame(self.container)
         # Red config
@@ -65,6 +69,11 @@ class TagSettings(Toplevel):
         self.b_value_label = Label(self.slider_container, text='0')
         self.blue.trace('w', lambda *args: self.callback_update_label(self.blue, self.b_value_label))
         self.b_slider.set(255)
+        # Buttons for editing tags
+        self.add_button = Button(self.container, text='Add', command=self.callback_add_tag, underline=0)
+        self.bind('<Alt-a>', self.callback_add_tag)
+        self.delete_button = Button(self.container, text='Delete', command=self.callback_remove_tag, underline=0)
+        self.bind('<Alt-d>', self.callback_remove_tag)
         # Finish and cancel buttons
         self.finish_button = Button(self.container, text='Finish', command=self.callback_finish, underline=0)
         self.cancel_button = Button(self.container, text='Cancel', command=self.callback_cancel, underline=0)
@@ -88,6 +97,8 @@ class TagSettings(Toplevel):
         self.hsb.grid(row=1, column=0, sticky='NESW')
         self.listbox_container.columnconfigure(0, weight=4)
         self.listbox_container.grid(row=0, column=0, columnspan=5, padx=padding, pady=padding, sticky='NESW')
+        # Color box
+        self.color_block.grid(row=1, column=0, columnspan=5, padx=padding, pady=padding, sticky='NS')
         # Red config
         self.r_label.grid(row=2, column=0, sticky='EW')
         self.r_slider.grid(row=2, column=1, columnspan=3, sticky='EW')
@@ -106,10 +117,10 @@ class TagSettings(Toplevel):
         self.slider_container.grid(row=2, column=0, columnspan=5, padx=padding, sticky='NESW')
         # Buttons for editing tags
         self.add_button.grid(row=5, column=1, padx=padding, pady=padding, sticky='E')
-        self.delete_button.grid(row=5, column=2, padx=padding, pady=padding, sticky='E')
+        self.delete_button.grid(row=5, column=2, padx=padding, pady=padding, sticky='EW')
         # Finish and cancel buttons
-        self.finish_button.grid(row=5, column=3, padx=padding, pady=padding, sticky='E')
-        self.cancel_button.grid(row=5, column=4, padx=padding, pady=padding, sticky='E')
+        self.finish_button.grid(row=5, column=3, padx=padding, pady=padding, sticky='EW')
+        self.cancel_button.grid(row=5, column=4, padx=padding, pady=padding, sticky='EW')
         # Master container frame
         self.container.columnconfigure(1, minsize=100)
         self.container.pack(side=LEFT, fill=BOTH)
@@ -123,6 +134,21 @@ class TagSettings(Toplevel):
         value = slider.get()
         if int(value) != value:
             slider.set(int(value))
+
+    def sort_column(self, col, reverse):
+        """
+        Sorts the tag list based on a particular column.
+        :param col: The column to sort.
+        :param reverse: Whether or not to sort in reverse order.
+        :return:
+        """
+        column_elements = [(self.tag_list.set(k, col), k) for k in self.tag_list.get_children('')]
+        column_elements.sort(reverse=reverse)
+
+        for index, (val, k) in enumerate(column_elements):
+            self.tag_list.move(k, '', index)
+
+        self.tag_list.heading(col, command=lambda _col=col: self.sort_column(_col, not reverse))
 
     def callback_update_label(self, var, label):
         """
@@ -150,8 +176,8 @@ class TagSettings(Toplevel):
         :param color: The color to associate with the tag as a string in hex format.
         :return:
         """
-        self.tag_list.insert('end', tag)
-        self.tag_list.itemconfig('end', bg=color)
+        self.tag_list.insert('', 'end', values=tag.split('::'), tags=tag)
+        self.tag_list.tag_configure(tag, background=color)
         self.tags[tag] = color
 
     def callback_update_select_background(self, event=None):
@@ -159,12 +185,12 @@ class TagSettings(Toplevel):
         Callback used to update the selection background and sliders to match the selection.
         :return:
         """
-        selection = self.tag_list.curselection()
+        selection = self.tag_list.focus()
         if not selection:
             return
-        tag = self.tag_list.get(selection[0])
+        tag = '::'.join(str(v) for v in self.tag_list.item(selection)['values'])
         hex_color = self.tags[tag]
-        self.tag_list.config(selectbackground=hex_color)
+        self.color_block.create_rectangle(0, 0, 301, 21, fill=hex_color)
         hex_color = hex_color.lstrip('#')
         r, g, b = tuple(int(hex_color[i:i + 2], 16) for i in range(0, 5, 2))
         self.r_slider.set(r)
@@ -176,15 +202,15 @@ class TagSettings(Toplevel):
         Updates the colors associated with a tag
         :return:
         """
-        selection = self.tag_list.curselection()
+        selection = self.tag_list.focus()
         if not selection:
             return
-        tag = self.tag_list.get(selection[0])
+        tag = '::'.join(str(v) for v in self.tag_list.item(selection)['values'])
         r, g, b = tuple(map(int, (self.r_slider.get(), self.g_slider.get(), self.b_slider.get())))
         hex_color = f'#{r:02x}{g:02x}{b:02x}'
         self.tags[tag] = hex_color
-        self.tag_list.config(selectbackground=hex_color)
-        self.tag_list.itemconfig(selection[0], bg=hex_color)
+        self.color_block.create_rectangle(0, 0, 301, 21, fill=hex_color)
+        self.tag_list.tag_configure(tag, background=hex_color)
         self.changes_made = True
 
     def callback_add_tag(self, event=None):
@@ -196,12 +222,12 @@ class TagSettings(Toplevel):
         window.grab_set()
 
     def callback_remove_tag(self, event=None):
-        selection = self.tag_list.curselection()
+        selection = self.tag_list.focus()
         if not selection:
             return
-        tag = self.tag_list.get(selection[0])
+        tag = '::'.join(str(v) for v in self.tag_list.item(selection)['values'])
         self.tags.pop(tag)
-        self.tag_list.delete(selection[0])
+        self.tag_list.delete(selection)
         self.changes_made = True
 
     def callback_finish(self, event=None):
