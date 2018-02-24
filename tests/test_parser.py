@@ -1177,6 +1177,49 @@ def test_parse_wanted():
            }
     assert parser.parser(d, rec) is not None
 
+
+def test_corrupt_record():
+    xml_corrupt = (
+        '<Event xmlns = "http://schemas.microsoft.com/win/2004/08/events/event">'
+        '<System>'
+        '<Provider Name="Microsoft-Windows-Power-Troubleshooter" Guid="{A68CA8B7-004F-D7B6-A698-07E2DE0F1F5D}"/>'
+        '<EventID>1</EventID>'
+        '<Version>1</Version>'
+        '<Level>4</Level>'
+        '<Task>5</Task>'
+        '<Opcode>0</Opcode>'
+        '<Keywords>0x8000000000000010</Keywords>'
+        '<TimeCreated SystemTime="2017-01-02T00:28:02.499911900Z"/>'
+        '<EventRecordID>521</EventRecordID>'
+        '<Correlation/>'
+        '<Execution ProcessID="4" ThreadID="372"/>'
+        '<Channel>System</Channel>'
+        '<Computer>LAPTOP-9KUQNI2Q</Computer>'
+        '<Security/>'
+        '</System>'
+        'CORRUPTED'
+        'LIGHTNING STRIKES THE WIRE'
+        'ZZZZZAAAAAAAPPPPPPP!!!!!'
+        '</Event>'
+    )
+    d = xmltodict.parse(xml_corrupt)
+    sys = d['Event']['System']
+    rec = {'timestamp_utc': sys['TimeCreated']['@SystemTime'],
+           'event_id': sys['EventID'],
+           'description': '',
+           'details': '',
+           'event_source': sys['Provider']['@Name'],
+           'event_log': sys['Channel'],
+           'session_id': '',
+           'account': '',
+           'computer_name': sys['Computer'],
+           'record_number': sys['EventRecordID'],
+           'recovered': True,
+           'alias': 'Sample'
+           }
+
+    assert parser.parser(d, rec) is None
+
 # def test_parser():
 #     for record in records:
 #         try:

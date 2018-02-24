@@ -379,6 +379,10 @@ def parser(raw, record):
     #     if user_parsers.get(record['event_source'], {}).get(record['event_id'], None) is not None:
     #         parse_record = user_parser
 
+    if get_event_data_section(raw) is False:
+        print('NOTE: A corrupted record was almost parsed with EventID ', record['event_id'])
+        return None
+
     if parse_record is not None:
         try:
             record = parse_record(raw, record)
@@ -400,3 +404,17 @@ def get_string(string):
     if isinstance(string, str):
         return string
     return string["#text"]
+
+
+def get_event_data_section(raw):
+    """
+    Helper to get the 'EventData' or 'UserData' key of the base XML for each record. If this fails, it is very likely that the
+    record is corrupted due to the log recovery software.
+    :param raw:
+    :return: whether or not the key exists.
+    """
+
+    if 'EventData' not in raw['Event'] and 'UserData' not in raw['Event']:
+        return False
+
+    return True
