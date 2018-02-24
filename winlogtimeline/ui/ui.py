@@ -52,21 +52,10 @@ class GUI(Tk):
         self.system = platform.system()
         self.changes_made = False
 
-        self.try_create_startup_window()
+        self.create_startup_window()
 
         self.__disable__()
         self.protocol('WM_DELETE_WINDOW', self.__destroy__)
-
-    def try_create_startup_window(self):
-        """
-        Checks the config to determine whether or not a start-up window should be created.
-        :return:
-        """
-        if self.program_config.get("startup_window", None):
-            window = StartupWindow(self)
-            window.attributes('-topmost', True)
-        else:
-            print("NOTE: Please delete your local 'config.json' file.")
 
     def update_status_bar(self, text):
         """
@@ -212,6 +201,24 @@ class GUI(Tk):
 
         t = Thread(target=callback)
         t.start()
+
+    def create_startup_window(self):
+        """
+        Helper function that checks the config.json file and decides whether or not to display the startup window.
+        :return:
+        """
+        startup_window = self.program_config.get("startup_window", None)
+
+        # Check to see if the config.json file has a startup_window key.
+        if startup_window is None:
+            self.program_config.update({"startup_window": True})
+            startup_window = True
+
+            util.data.write_config(self.program_config)
+
+        if startup_window:
+            window = StartupWindow(self)
+            window.attributes('-topmost', True)
 
     def __disable__(self):
         self.enabled = False
