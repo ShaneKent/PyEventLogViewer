@@ -6,11 +6,11 @@ YOUR SUMMARY HERE
 <!--- Please relate an issue using either "Related to #issuenum" or "Closes #issuenum" --->
 RELATED ISSUES HERE
 
-## Type of Chage
+## Type of Change
 <!--- Please select at least one --->
 - [ ] Bug fix
 - [ ] New feature
-- [ ] Breaking change (this change would somehow cause existing functionality to not beahve as expected)
+- [ ] Breaking change (this change would somehow cause existing functionality to not behave as expected)
 - [ ] Other
 
 ## Testing
