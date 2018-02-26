@@ -1177,6 +1177,7 @@ def test_parse_wanted():
            }
     assert parser.parser(d, rec, {}) is not None
 
+
 def test_parse_user_configured_event():
     xml_wanted = (
         '<Event xmlns = "http://schemas.microsoft.com/win/2004/08/events/event">'
@@ -1260,7 +1261,7 @@ def test_corrupt_record():
            'alias': 'Sample'
            }
 
-    assert parser.parser(d, rec) is None
+    assert parser.parser(d, rec, {}) is None
 
 # def test_parser():
 #     for record in records:

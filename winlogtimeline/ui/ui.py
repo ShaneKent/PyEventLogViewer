@@ -138,6 +138,7 @@ class GUI(Tk):
         self.__disable__()
 
         def callback():
+            nonlocal self, file_name, alias
             # Prepare status bar callback.
             text = '{file}: {status}'.format(file=os.path.basename(file_name), status='{status}')
             # Start the import log process.
@@ -147,6 +148,7 @@ class GUI(Tk):
                                      self.get_progress_bar_context_manager)
             except Exception as e:
                 self.update_status_bar(f'Error while importing log: {e.__class__.__name__}: {str(e)}')
+                self.current_project.cleanup_import(alias)
                 self.__enable__()
                 return
 
@@ -164,7 +166,7 @@ class GUI(Tk):
         Returns a list of records with the filter applied. Meant for use in the export process.
         :return:
         """
-        config = self.filter_section.filter_config()
+        config = self.filter_section.filters
         return collector.filter_logs(self.current_project, config)
 
     def create_new_timeline(self, headers=None, records=None):
@@ -176,22 +178,22 @@ class GUI(Tk):
         :return:
         """
 
-        def callback(h=headers, r=records):
+        def callback():
+            nonlocal self, headers, records
             # Disable all timeline interaction buttons to prevent a timeline duplication bug
             self.__disable__()
             self.update_status_bar('Loading records...')
-
             # Get all records if they weren't provided
-            if r is None:
+            if records is None:
                 # TODO: Modify this to apply any queries that may exist
-                r = self.current_project.get_all_logs()
-                if len(r) == 0:
+                records = self.current_project.get_all_logs()
+                if len(records) == 0:
                     self.__enable__()
                     self.update_status_bar('No records to display. ')
                     return
-            if h is None:
-                h = Record.get_headers()
-            r = [record.get_tuple() for record in r]
+            if headers is None:
+                headers = Record.get_headers()
+            records = [record.get_tuple() for record in records]
 
             # Delete the old timeline if it exists
             if self.timeline is not None:
@@ -199,7 +201,7 @@ class GUI(Tk):
 
             self.update_status_bar('Rendering timeline...')
             # Create the new timeline
-            self.timeline = Timeline(self, h, r)
+            self.timeline = Timeline(self, headers, records)
 
             self.update_status_bar('')
             # Enable all timeline interaction buttons

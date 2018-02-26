@@ -172,3 +172,12 @@ class Project:
         aliases = [row[3] for row in rows]
 
         return aliases
+
+    def cleanup_import(self, alias):
+        """
+        Ensures that a failed import is cleaned up correctly.
+        :param alias: The alias used for the import.
+        :return:
+        """
+        self._conn.execute('DELETE FROM source_Files WHERE alias=?', (alias,))
+        self._conn.execute('DELETE FROM logs WHERE alias=?', (alias,))
