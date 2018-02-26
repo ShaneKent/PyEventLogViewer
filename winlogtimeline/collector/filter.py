@@ -1,11 +1,12 @@
 from winlogtimeline.util.logs import Record
 
-def filter_logs(project, config):
+def filter_logs(project, config, dedup):
     """
     When given a list of log objects, returns only those that match the filters defined in config and project. The
     filters in project take priority over config.
     :param project: A project instance.
     :param config: A config dictionary.
+    :param dedup: Int var specifying deduplication
     :return: A list of logs that satisfy the filters specified in the configuration.
     """
 
@@ -48,7 +49,8 @@ def filter_logs(project, config):
              f'alias, record_hash FROM logs WHERE ')
     for constraint in filters:
         query += '{} {} {} AND '.format(*constraint)
-    query = query[:-5] + ' GROUP BY record_hash'
+    query = query[:-5]
+    if dedup.get() != 0: query += ' GROUP BY record_hash'
     print(query)
 
     cur = project._conn.execute(query)

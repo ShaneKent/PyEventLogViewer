@@ -787,17 +787,21 @@ class Filters(Frame):
         super().__init__(parent, **kwargs)
         self.pack(side=TOP, fill=X)
 
-        # Filter Label
-        # self.flabel = Label(self, text='Filters:', anchor=W, **kwargs)
-        # self.flabel.pack(side=LEFT)
-
         self.filters = []
 
         self.advanced = Button(self, text="Filters", command=lambda: self.advanced_filter_function())
         self.advanced.pack(side=LEFT)
 
-        self.clear = Button(self, text="Clear", command=lambda: self.master.create_new_timeline())
+        self.clear = Button(self, text="Clear", command=lambda: self.clear_timeline())
         self.clear.pack(side=LEFT)
+
+        self.dedup_var = IntVar(value=0)
+        self.dedup = Checkbutton(self, text="Deduplicate", variable=self.dedup_var)
+        self.dedup.pack(side=LEFT)
+
+        #self.dedup_var.trace('w', self.apply_filter())
+
+
 
     def __disable__(self):
         self.flabel.config(state=DISABLED)
@@ -807,21 +811,23 @@ class Filters(Frame):
         self.flabel.config(state=NORMAL)
         self.columns.config(state=NORMAL)
 
-    '''def get_opList(self):
-        return self.opList'''
-
     def create_colList(self, colList):
         tmp = Record.get_headers()
         for col in tmp:
             colList.append(col)
 
+    @enable_disable_wrapper(lambda *args: args[0].master)
     def apply_filter(self):
-        # config = self.filter_config()
-        logs = collector.filter_logs(self.master.current_project, self.filters)
+        logs = collector.filter_logs(self.master.current_project, self.filters, self.dedup_var)
 
         self.master.create_new_timeline(records=logs)
         print('Found {} records'.format(len(logs)))
         # self.master.status_bar.update_status('text')
+
+
+    @enable_disable_wrapper(lambda *args: args[0].master)
+    def clear_timeline(self):
+        self.master.create_new_timeline()
 
     @enable_disable_wrapper(lambda *args: args[0].master)
     def advanced_filter_function(self, event=None):
