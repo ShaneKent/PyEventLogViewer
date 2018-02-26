@@ -26,7 +26,7 @@ def test_parser_id_1():
     xml_input = (
         '<Event xmlns = "http://schemas.microsoft.com/win/2004/08/events/event">'
         '<System>'
-        '<Provider Name="Microsoft-Windows-Kernel-General" Guid="{A68CA8B7-004F-D7B6-A698-07E2DE0F1F5D}"/>'
+        '<Provider Name="Microsoft-Windows-Power-Troubleshooter" Guid="{A68CA8B7-004F-D7B6-A698-07E2DE0F1F5D}"/>'
         '<EventID>1</EventID>'
         '<Version>1</Version>'
         '<Level>4</Level>'
@@ -51,7 +51,7 @@ def test_parser_id_1():
     d = xmltodict.parse(xml_input)
     sys = d['Event']['System']
     rec = {'timestamp_utc': sys['TimeCreated']['@SystemTime'],
-           'event_id': sys['EventID'],
+           'event_id': parser.get_string(sys['EventID']),
            'description': '',
            'details': '',
            'event_source': sys['Provider']['@Name'],
@@ -63,7 +63,7 @@ def test_parser_id_1():
            'recovered': True,
            'alias': 'Sample'
            }
-    record = parser.parse_id_1(d, rec)
+    record = parser.parser(d, rec, {})
     assert record["account"] == "SYSTEM"
     assert record["description"] == "Wake Up"
     assert record["details"] == ("Wake Time: 2017-01-01T 22:19:39.790 (UTC) | "
@@ -103,7 +103,7 @@ def test_parser_id_12():
     d = xmltodict.parse(xml_input)
     sys = d['Event']['System']
     rec = {'timestamp_utc': sys['TimeCreated']['@SystemTime'],
-           'event_id': sys['EventID'],
+           'event_id': parser.get_string(sys['EventID']),
            'description': '',
            'details': '',
            'event_source': sys['Provider']['@Name'],
@@ -115,7 +115,7 @@ def test_parser_id_12():
            'recovered': True,
            'alias': 'Sample'
            }
-    record = parser.parse_id_12(d, rec)
+    record = parser.parser(d, rec, {})
     assert record["account"] == "SYSTEM"
     assert record["description"] == "System Start"
     assert record["details"] == 'Starting Windows NT version 10. 0. 14393 at 2017-01-01 21:18:30.493 (UTC)'
@@ -148,7 +148,7 @@ def test_parser_id_13():
     d = xmltodict.parse(xml_input)
     sys = d['Event']['System']
     rec = {'timestamp_utc': sys['TimeCreated']['@SystemTime'],
-           'event_id': sys['EventID'],
+           'event_id': parser.get_string(sys['EventID']),
            'description': '',
            'details': '',
            'event_source': sys['Provider']['@Name'],
@@ -160,7 +160,7 @@ def test_parser_id_13():
            'recovered': True,
            'alias': 'Sample'
            }
-    record = parser.parse_id_13(d, rec)
+    record = parser.parser(d, rec, {})
     assert record["account"] == "SYSTEM"
     assert record["description"] == "System Shutdown"
     assert record["details"] == "Shutdown Time: 2017-01-01 21:23:31.105 (UTC)"
@@ -204,7 +204,7 @@ def test_parser_id_41():
     d = xmltodict.parse(xml_input)
     sys = d['Event']['System']
     rec = {'timestamp_utc': sys['TimeCreated']['@SystemTime'],
-           'event_id': sys['EventID'],
+           'event_id': parser.get_string(sys['EventID']),
            'description': '',
            'details': '',
            'event_source': sys['Provider']['@Name'],
@@ -216,7 +216,7 @@ def test_parser_id_41():
            'recovered': True,
            'alias': 'Sample'
            }
-    record = parser.parse_id_41(d, rec)
+    record = parser.parser(d, rec, {})
     assert record["account"] == "SYSTEM"
     assert record["description"] == "Shutdown Error"
 
@@ -252,7 +252,7 @@ def test_parser_id_42():
     d = xmltodict.parse(xml_input)
     sys = d['Event']['System']
     rec = {'timestamp_utc': sys['TimeCreated']['@SystemTime'],
-           'event_id': sys['EventID'],
+           'event_id': parser.get_string(sys['EventID']),
            'description': '',
            'details': '',
            'event_source': sys['Provider']['@Name'],
@@ -264,7 +264,7 @@ def test_parser_id_42():
            'recovered': True,
            'alias': 'Sample'
            }
-    record = parser.parse_id_42(d, rec)  # System    -   Sleep Mode
+    record = parser.parser(d, rec, {})  # System    -   Sleep Mode
     data = d["Event"]["EventData"]["Data"]
     assert record["account"] == "SYSTEM"
     assert record["description"] == "Sleep Mode"
@@ -313,7 +313,7 @@ def test_parser_id_104():
     d = xmltodict.parse(xml_input)
     sys = d['Event']['System']
     rec = {'timestamp_utc': sys['TimeCreated']['@SystemTime'],
-           'event_id': sys['EventID'],
+           'event_id': parser.get_string(sys['EventID']),
            'description': '',
            'details': '',
            'event_source': sys['Provider']['@Name'],
@@ -325,7 +325,7 @@ def test_parser_id_104():
            'recovered': True,
            'alias': 'Sample'
            }
-    record = parser.parse_id_104(d, rec)  # System    -   Log Cleared
+    record = parser.parser(d, rec, {})  # System    -   Log Cleared
     assert record["account"] == "User"
     assert record["description"] == "Log Cleared"
     assert record["details"] == "System event log was cleared by the following account: DESKTOP-C0O9EV0\System"
@@ -364,7 +364,7 @@ def test_parser_id_1074_unwanted():
     d = xmltodict.parse(xml_input)
     sys = d['Event']['System']
     rec = {'timestamp_utc': sys['TimeCreated']['@SystemTime'],
-           'event_id': sys['EventID'],
+           'event_id': parser.get_string(sys['EventID']),
            'description': '',
            'details': '',
            'event_source': sys['Provider']['@Name'],
@@ -376,7 +376,7 @@ def test_parser_id_1074_unwanted():
            'recovered': True,
            'alias': 'Sample'
            }
-    record = parser.parse_id_1074(d, rec)  # System    -   Shutdown Initiated
+    record = parser.parser(d, rec, {})  # System    -   Shutdown Initiated
     assert record is None  # This is the case because Bruce "tosses" any 1074 records where Data param4 != 0x500ff.
 
 
@@ -414,7 +414,7 @@ def test_parser_id_1074_wanted():
     d = xmltodict.parse(xml_input)
     sys = d['Event']['System']
     rec = {'timestamp_utc': sys['TimeCreated']['@SystemTime'],
-           'event_id': sys['EventID'],
+           'event_id': parser.get_string(sys['EventID']),
            'description': '',
            'details': '',
            'event_source': sys['Provider']['@Name'],
@@ -426,7 +426,7 @@ def test_parser_id_1074_wanted():
            'recovered': True,
            'alias': 'Sample'
            }
-    record = parser.parse_id_1074(d, rec)  # System    -   Shutdown Initiated
+    record = parser.parser(d, rec, {})  # System    -   Shutdown Initiated
     data = d["Event"]["EventData"]["Data"]
     assert record["account"] == "user"
     assert record["details"] == "Cause: power off"
@@ -469,7 +469,7 @@ def test_parser_id_1102():
     d = xmltodict.parse(xml_input)
     sys = d['Event']['System']
     rec = {'timestamp_utc': sys['TimeCreated']['@SystemTime'],
-           'event_id': sys['EventID'],
+           'event_id': parser.get_string(sys['EventID']),
            'description': '',
            'details': '',
            'event_source': sys['Provider']['@Name'],
@@ -481,7 +481,7 @@ def test_parser_id_1102():
            'recovered': True,
            'alias': 'Sample'
            }
-    record = parser.parse_id_1102(d, rec)  # Security  -   Log Cleared
+    record = parser.parser(d, rec, {})  # Security  -   Log Cleared
     assert record["description"] == "Log Cleared"
     assert record["account"] == "S-1-5-21-1990300061-1030431749-3499390798-1001"
     assert record["details"] == ("Security event log was cleared by the following account: S-1-5-21-1990300061-"
@@ -523,7 +523,7 @@ def test_parser_id_4616():
     d = xmltodict.parse(xml_input)
     sys = d['Event']['System']
     rec = {'timestamp_utc': sys['TimeCreated']['@SystemTime'],
-           'event_id': sys['EventID'],
+           'event_id': parser.get_string(sys['EventID']),
            'description': '',
            'details': '',
            'event_source': sys['Provider']['@Name'],
@@ -535,7 +535,7 @@ def test_parser_id_4616():
            'recovered': True,
            'alias': 'Sample'
            }
-    record = parser.parse_id_4616(d, rec)  # Security  -   Log Cleared
+    record = parser.parser(d, rec, {})  # Security  -   Log Cleared
     assert record["description"] == "Time Change"
     assert record["account"] == "LOCAL SERVICE"
     assert (record[
@@ -595,7 +595,7 @@ def test_parser_id_4624():
     d = xmltodict.parse(xml_input)
     sys = d['Event']['System']
     rec = {'timestamp_utc': sys['TimeCreated']['@SystemTime'],
-           'event_id': sys['EventID'],
+           'event_id': parser.get_string(sys['EventID']),
            'description': '',
            'details': '',
            'event_source': sys['Provider']['@Name'],
@@ -607,7 +607,7 @@ def test_parser_id_4624():
            'recovered': True,
            'alias': 'Sample'
            }
-    record = parser.parse_id_4624(d, rec)
+    record = parser.parser(d, rec, {})
     data = d["Event"]["EventData"]["Data"]
     reason = data[8]["#text"]
     assert record["account"] == "user@gmail.com"
@@ -660,7 +660,7 @@ def test_parser_id_4634():
     d = xmltodict.parse(xml_input)
     sys = d['Event']['System']
     rec = {'timestamp_utc': sys['TimeCreated']['@SystemTime'],
-           'event_id': sys['EventID'],
+           'event_id': parser.get_string(sys['EventID']),
            'description': '',
            'details': '',
            'event_source': sys['Provider']['@Name'],
@@ -672,7 +672,7 @@ def test_parser_id_4634():
            'recovered': True,
            'alias': 'Sample'
            }
-    record = parser.parse_id_4634(d, rec)
+    record = parser.parser(d, rec, {})
     data = d["Event"]["EventData"]["Data"]
     assert record["account"] == "user"  # This was being incorrectly parsed originally.
     assert record["description"] == "Logoff"
@@ -722,7 +722,7 @@ def test_parser_id_4647():
     d = xmltodict.parse(xml_input)
     sys = d['Event']['System']
     rec = {'timestamp_utc': sys['TimeCreated']['@SystemTime'],
-           'event_id': sys['EventID'],
+           'event_id': parser.get_string(sys['EventID']),
            'description': '',
            'details': '',
            'event_source': sys['Provider']['@Name'],
@@ -734,7 +734,7 @@ def test_parser_id_4647():
            'recovered': True,
            'alias': 'Sample'
            }
-    record = parser.parse_id_4647(d, rec)
+    record = parser.parser(d, rec, {})
     assert record["account"] == "user"
     assert record["description"] == "User Initiated Logoff"
     assert record["session_id"] == "0x000000000005a6d8"
@@ -792,7 +792,7 @@ def test_parser_id_4720():  # Do not have
     d = xmltodict.parse(xml_input)
     sys = d['Event']['System']
     rec = {'timestamp_utc': sys['TimeCreated']['@SystemTime'],
-           'event_id': sys['EventID'],
+           'event_id': parser.get_string(sys['EventID']),
            'description': '',
            'details': '',
            'event_source': sys['Provider']['@Name'],
@@ -804,7 +804,7 @@ def test_parser_id_4720():  # Do not have
            'recovered': True,
            'alias': 'Sample'
            }
-    record = parser.parse_id_4720(d, rec)  # Security  -   Account Created
+    record = parser.parser(d, rec, {})  # Security  -   Account Created
     assert record["account"] == "DESKTOP-BPKOOQH$"
     assert record["description"] == "Account Created"
     assert (record[
@@ -817,7 +817,7 @@ def test_parser_id_4720():  # Do not have
 #     d = xmltodict.parse(xmlInput)
 #     sys = d['Event']['System']
 #     rec = {'timestamp_utc': sys['TimeCreated']['@SystemTime'],
-#            'event_id': sys['EventID'],
+#            'event_id': parser.get_string(sys['EventID']),
 #            'description': '',
 #            'details': '',
 #            'event_source': sys['Provider']['@Name'],
@@ -829,7 +829,7 @@ def test_parser_id_4720():  # Do not have
 #            'recovered': True,
 #            'alias': 'Sample'
 #            }
-#     record = parser.parse_id_4722(d, rec)  # Security  -   Account Enabled
+#     record = parser.parser(d, rec, {})  # Security  -   Account Enabled
 #     data = d["Event"]["EventData"]["Data"]
 #     assert record["account"] == data[4]["#text"]
 #     assert record["description"] == "Account Enabled"
@@ -843,7 +843,7 @@ def test_parser_id_4720():  # Do not have
 #     d = xmltodict.parse(xmlInput)
 #     sys = d['Event']['System']
 #     rec = {'timestamp_utc': sys['TimeCreated']['@SystemTime'],
-#            'event_id': sys['EventID'],
+#            'event_id': parser.get_string(sys['EventID']),
 #            'description': '',
 #            'details': '',
 #            'event_source': sys['Provider']['@Name'],
@@ -855,7 +855,7 @@ def test_parser_id_4720():  # Do not have
 #            'recovered': True,
 #            'alias': 'Sample'
 #            }
-#     record = parser.parse_id_4723(d, rec)  # Security  -   User Changed Password
+#     record = parser.parser(d, rec, {})  # Security  -   User Changed Password
 #     data = d["Event"]["EventData"]["Data"]
 #     assert record["account"] == data[4]["#text"]
 #     assert record["description"] == "User Changed Password"
@@ -897,7 +897,7 @@ def test_parser_id_4724():  # Do not have
     d = xmltodict.parse(xml_input)
     sys = d['Event']['System']
     rec = {'timestamp_utc': sys['TimeCreated']['@SystemTime'],
-           'event_id': sys['EventID'],
+           'event_id': parser.get_string(sys['EventID']),
            'description': '',
            'details': '',
            'event_source': sys['Provider']['@Name'],
@@ -909,7 +909,7 @@ def test_parser_id_4724():  # Do not have
            'recovered': True,
            'alias': 'Sample'
            }
-    record = parser.parse_id_4724(d, rec)  # Security  -   Privileged User Reset Password
+    record = parser.parser(d, rec, {})  # Security  -   Privileged User Reset Password
     data = d["Event"]["EventData"]["Data"]
     assert record["account"] == data[4]["#text"]
     assert record["description"] == "Privileged User Reset Password"
@@ -923,7 +923,7 @@ def test_parser_id_4724():  # Do not have
 #     d = xmltodict.parse(xmlInput)
 #     sys = d['Event']['System']
 #     rec = {'timestamp_utc': sys['TimeCreated']['@SystemTime'],
-#            'event_id': sys['EventID'],
+#            'event_id': parser.get_string(sys['EventID']),
 #            'description': '',
 #            'details': '',
 #            'event_source': sys['Provider']['@Name'],
@@ -935,7 +935,7 @@ def test_parser_id_4724():  # Do not have
 #            'recovered': True,
 #            'alias': 'Sample'
 #            }
-#     record = parser.parse_id_4725(d, rec)  # Security  -   Account Disabled
+#     record = parser.parser(d, rec, {})  # Security  -   Account Disabled
 #     data = d["Event"]["EventData"]["Data"]
 #     assert(record["account"]) == data[4]["#text"]
 #     assert(record["description"]) == "Account Disabled"
@@ -949,7 +949,7 @@ def test_parser_id_4724():  # Do not have
 #     d = xmltodict.parse(xmlInput)
 #     sys = d['Event']['System']
 #     rec = {'timestamp_utc': sys['TimeCreated']['@SystemTime'],
-#            'event_id': sys['EventID'],
+#            'event_id': parser.get_string(sys['EventID']),
 #            'description': '',
 #            'details': '',
 #            'event_source': sys['Provider']['@Name'],
@@ -961,7 +961,7 @@ def test_parser_id_4724():  # Do not have
 #            'recovered': True,
 #            'alias': 'Sample'
 #            }
-#     record = parser.parse_id_4726(d, rec)  # Security  -   Account Deleted
+#     record = parser.parser(d, rec, {})  # Security  -   Account Deleted
 #     data = d["Event"]["EventData"]["Data"]
 #     assert(record["account"]) == data[4]["#text"]
 #     assert(record["description"]) == "Account Deleted"
@@ -1001,7 +1001,7 @@ def test_parser_id_6008():  # Do not have
     d = xmltodict.parse(xml_input)
     sys = d['Event']['System']
     rec = {'timestamp_utc': sys['TimeCreated']['@SystemTime'],
-           'event_id': sys['EventID'],
+           'event_id': parser.get_string(sys['EventID']),
            'description': '',
            'details': '',
            'event_source': sys['Provider']['@Name'],
@@ -1013,7 +1013,7 @@ def test_parser_id_6008():  # Do not have
            'recovered': True,
            'alias': 'Sample'
            }
-    record = parser.parse_id_6008(d, rec)  # System    -   Shutdown Error
+    record = parser.parser(d, rec, {})  # System    -   Shutdown Error
     assert record["description"] == "Shutdown Error"
 
 
@@ -1055,7 +1055,7 @@ def test_parser_id_6013():  # Do not have
     d = xmltodict.parse(xml_input)
     sys = d['Event']['System']
     rec = {'timestamp_utc': sys['TimeCreated']['@SystemTime'],
-           'event_id': sys['EventID'],
+           'event_id': parser.get_string(sys['EventID']),
            'description': '',
            'details': '',
            'event_source': sys['Provider']['@Name'],
@@ -1067,7 +1067,7 @@ def test_parser_id_6013():  # Do not have
            'recovered': True,
            'alias': 'Sample'
            }
-    record = parser.parse_id_6013(d, rec)  # System    -   System Status
+    record = parser.parser(d, rec, {})  # System    -   System Status
     assert record["account"] == "SYSTEM"
     assert record["description"] == "System Status"
     assert record["details"] == "System Uptime: 2349980 seconds. Time Zone Setting: 480 Pacific Standard Time."
@@ -1119,7 +1119,7 @@ def test_parse_unwanted():
         d = xmltodict.parse(xml_unwanted)
     sys = d['Event']['System']
     rec = {'timestamp_utc': sys['TimeCreated']['@SystemTime'],
-           'event_id': sys['EventID'],
+           'event_id': parser.get_string(sys['EventID']),
            'description': '',
            'details': '',
            'event_source': sys['Provider']['@Name'],
@@ -1131,7 +1131,7 @@ def test_parse_unwanted():
            'recovered': True,
            'alias': 'Sample'
            }
-    assert parser.parser(d, rec) is None
+    assert parser.parser(d, rec, {}) is None
 
 
 def test_parse_wanted():
@@ -1163,7 +1163,7 @@ def test_parse_wanted():
     d = xmltodict.parse(xml_wanted)
     sys = d['Event']['System']
     rec = {'timestamp_utc': sys['TimeCreated']['@SystemTime'],
-           'event_id': sys['EventID'],
+           'event_id': parser.get_string(sys['EventID']),
            'description': '',
            'details': '',
            'event_source': sys['Provider']['@Name'],
@@ -1175,7 +1175,49 @@ def test_parse_wanted():
            'recovered': True,
            'alias': 'Sample'
            }
-    assert parser.parser(d, rec) is not None
+    assert parser.parser(d, rec, {}) is not None
+
+def test_parse_user_configured_event():
+    xml_wanted = (
+        '<Event xmlns = "http://schemas.microsoft.com/win/2004/08/events/event">'
+        '<System>'
+        '<Provider Name="CustomEventSource"/>'
+        '<EventID>1337</EventID>'
+        '<Version>1</Version>'
+        '<Level>4</Level>'
+        '<Task>5</Task>'
+        '<Opcode>0</Opcode>'
+        '<Keywords>0x8000000000000010</Keywords>'
+        '<TimeCreated SystemTime="2017-01-02T00:28:02.499911900Z"/>'
+        '<EventRecordID>521</EventRecordID>'
+        '<Correlation/>'
+        '<Execution ProcessID="4" ThreadID="372"/>'
+        '<Channel>System</Channel>'
+        '<Computer>LAPTOP-9KUQNI2Q</Computer>'
+        '<Security/>'
+        '</System>'
+        '<EventData>'
+        '</EventData>'
+        '</Event>'
+    )
+    d = xmltodict.parse(xml_wanted)
+    sys = d['Event']['System']
+    rec = {'timestamp_utc': sys['TimeCreated']['@SystemTime'],
+           'event_id': parser.get_string(sys['EventID']),
+           'description': '',
+           'details': '',
+           'event_source': sys['Provider']['@Name'],
+           'event_log': sys['Channel'],
+           'session_id': '',
+           'account': '',
+           'computer_name': sys['Computer'],
+           'record_number': sys['EventRecordID'],
+           'recovered': True,
+           'alias': 'Sample'
+           }
+    parsed_record = parser.parser(d, rec, {'CustomEventSource': ['1337']})
+    assert parsed_record is not None
+    assert parsed_record['description'] == 'User defined event. Double-click to view XML.'
 
 
 def test_corrupt_record():
@@ -1231,7 +1273,7 @@ def test_corrupt_record():
 #         sys = d['Event']['System']
 #
 #         rec = {'timestamp_utc': sys['TimeCreated']['@SystemTime'],
-#                'event_id': sys['EventID'],
+#                'event_id': parser.get_string(sys['EventID']),
 #                'description': '',
 #                'details': '',
 #                'event_source': sys['Provider']['@Name'],

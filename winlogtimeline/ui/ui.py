@@ -4,12 +4,12 @@ from tkinter import font
 from tkinter.ttk import *
 from threading import Thread
 
-from collection_settings import CollectionSettings
 from winlogtimeline import util
 from winlogtimeline import collector
 from winlogtimeline.util.logs import Record
 from .new_project import NewProject
 from .tag_settings import TagSettings
+from .collection_settings import CollectionSettings
 from .import_window import ImportWindow
 from .help_window import HelpWindow
 from .export_timeline import ExportWindow
