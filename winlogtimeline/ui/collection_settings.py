@@ -151,7 +151,7 @@ class CollectionSettings(Toplevel):
             messagebox.showerror('Error', 'Cannot remove builtin event type')
             return
         source, event = item['values']
-        self.user_events.remove((source, event))
+        self.user_events.remove((source, str(event)))
         self.event_list.delete(selection)
         self.changes_made = True
 

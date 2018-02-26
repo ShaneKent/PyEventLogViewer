@@ -32,11 +32,14 @@ def import_log(log_file, alias, project, config, status_callback, progress_conte
     with open(log_file, "rb") as file:
         file_hash = md5(file.read()).hexdigest()
 
+    user_parsers = project.config.get('events', {}).get('custom', {})
+
     # Open the file with pyevtx and parse.
     log = pyevtx.open(log_file)
     records = collect_records(log)
     recovered = collect_deleted_records(log)
-    xml_records = chain(xml_convert(records, alias), xml_convert(recovered, alias, recovered=True))
+    xml_records = chain(xml_convert(records, alias, user_parsers),
+                        xml_convert(recovered, alias, user_parsers, recovered=True))
 
     status_callback('Parsing records...')
 
@@ -82,7 +85,7 @@ def build_illegal_charset_regex():
     return re.compile(r'[{}]'.format(''.join(_illegal_ranges)))
 
 
-def xml_convert(records, source_file_alias, recovered=False):
+def xml_convert(records, source_file_alias, user_parsers, recovered=False):
     illegal_charset = build_illegal_charset_regex()
 
     for record in records:
@@ -115,7 +118,7 @@ def xml_convert(records, source_file_alias, recovered=False):
             'record_number': sys_info['EventRecordID'],
             'recovered': recovered,
             'alias': source_file_alias
-        })
+        }, user_parsers)
 
         yield (dictionary, record)
 

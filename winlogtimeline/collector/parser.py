@@ -366,18 +366,17 @@ def user_parser(raw, record):
     :param record:
     :return:
     """
-    record['description'] = 'User defined record'
+    record['description'] = 'User defined event. Double-click to view XML.'
 
     return record
 
 
-def parser(raw, record):
+def parser(raw, record, user_parsers):
     parse_record = parsers.get(record['event_source'], {}).get(record['event_id'], None)
 
-    # Disabled until user-defined scraping is added
-    # if parse_record is None:
-    #     if user_parsers.get(record['event_source'], {}).get(record['event_id'], None) is not None:
-    #         parse_record = user_parser
+    if parse_record is None:
+        if record['event_id'] in user_parsers.get(record['event_source'], []):
+            parse_record = user_parser
 
     if get_event_data_section(raw) is False:
         print('NOTE: A corrupted record was almost parsed with EventID ', record['event_id'])
