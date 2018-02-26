@@ -533,8 +533,36 @@ class MenuBar(Menu):
         self.view_menu.add_cascade(label='Timezone', menu=self.timezone_menu, underline=5)
         self.timezone_offset = IntVar()
         self.timezone_offset.set(0)
+        cities = ['United States Minor Outlying Islands',
+                  'American Samoa',
+                  'Honolulu',
+                  'Anchorage',
+                  'Los Angeles/Vancouver',
+                  'Phoenix/Calgary',
+                  'Chicago/Mexico City',
+                  'New York/Havana',
+                  'Caracas/Halifax',
+                  'Buenos Aires/São Paulo',
+                  'Brazil',
+                  'Cape Verde',
+                  'Dublin/London',
+                  'Berlin/Paris/Rome',
+                  'Bucharest/Jerusalem',
+                  'Istanbul/Baghdad',
+                  'Dubai',
+                  'Karachi/Tashkent',
+                  'Almaty/Dhaka',
+                  'Jakarta/Bangkok',
+                  'Beijing/Taipei',
+                  'Seoul/Tokyo',
+                  'Sydney',
+                  'Noumea',
+                  'Auckland',
+                  'Apia',
+                  'Kiribati']
         for offset in range(-12, 13):
-            self.timezone_menu.add_radiobutton(label=f'UTC{offset:+d}' if offset != 0 else 'UTC',
+            self.timezone_menu.add_radiobutton(label=f'UTC{offset:+d} - {cities[offset + 12]}',
+                                               # if offset != 0 else 'UTC',
                                                variable=self.timezone_offset, value=offset,
                                                command=self.update_timezone_offset)
 
