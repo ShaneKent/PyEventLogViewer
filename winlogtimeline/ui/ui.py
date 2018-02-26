@@ -211,7 +211,8 @@ class GUI(Tk):
 
         # Check to see if the config.json file has a startup_window key.
         if startup_window is None:
-            self.program_config.update({"startup_window": True})
+            # self.program_config.update({"startup_window": True})
+            self.program_config["startup_window"] = True
             startup_window = True
 
             util.data.write_config(self.program_config)
