@@ -61,10 +61,6 @@ class Project:
             if 'timezone_offset' not in self.config['state'].keys():
                 self.config['state']['timezone_offset'] = 0
 
-            # TODO: remove this. This if for backwards-compatibility only
-            self.config['state']['columns'] = ['Timestamp' if col == 'Timestamp (UTC)' else col for col in
-                                               self.config['state']['columns']]
-
         except Exception as e:
             self.exception = e
             raise e

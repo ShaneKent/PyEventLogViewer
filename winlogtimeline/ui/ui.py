@@ -3,6 +3,8 @@ from tkinter import messagebox, filedialog
 from tkinter import font
 from tkinter.ttk import *
 from threading import Thread
+
+from collection_settings import CollectionSettings
 from winlogtimeline import util
 from winlogtimeline import collector
 from winlogtimeline.util.logs import Record
@@ -75,6 +77,10 @@ class GUI(Tk):
 
     def create_project(self):
         window = NewProject(self)
+        window.grab_set()
+
+    def open_collection_settings(self):
+        window = CollectionSettings(self)
         window.grab_set()
 
     def open_color_settings(self):
@@ -254,7 +260,7 @@ class Timeline(Frame):
         self._init_widgets()
         self.setup_columns()
         self.update_column_widths(data)
-        self.update_tags(parent.current_project.config['events'])
+        self.update_tags(parent.current_project.config['events']['colors'])
         self.populate_timeline(data)
         self.sort_column('Timestamp', False)
         self._place_widgets()
@@ -292,8 +298,9 @@ class Timeline(Frame):
         :param tags: The tags to update.
         :return:
         """
-        for tag, color in tags.items():
-            self.tree.tag_configure(tag, background=color)
+        for source, events in tags.items():
+            for event, color in events.items():
+                self.tree.tag_configure(f'{source}::{event}', background=color)
 
     def setup_columns(self):
         """
@@ -367,6 +374,8 @@ class Timeline(Frame):
         :return:
         """
         column_elements = [(self.tree.set(k, col), k) for k in self.tree.get_children('')]
+        if col == 'Event ID' or col == 'Record Number':
+            column_elements = [(int(v), k) for v, k in column_elements]
         column_elements.sort(reverse=reverse)
 
         for index, (val, k) in enumerate(column_elements):
@@ -534,6 +543,9 @@ class MenuBar(Menu):
         self.add_cascade(label='Tools', menu=self.tool_menu, underline=0)
         # Tools -> Record Highlighting
         self.tool_menu.add_command(label='Record Highlighting', command=self.color_settings_function, underline=0)
+        # Tools -> Configure Log Collection
+        self.tool_menu.add_command(label='Configure Log Collection', command=self.colleciton_settings_function,
+                                   underline=1)
         # Tools -> Import Log
         self.tool_menu.add_command(label='Import Log File', command=self.import_button_function, underline=0,
                                    accelerator='Ctrl+I')
@@ -600,11 +612,20 @@ class MenuBar(Menu):
     @enable_disable_wrapper(lambda *args: args[0].master)
     def color_settings_function(self, event=None):
         """
-        Callback function for Tools -> Timeline Colors. Alters the colors for the current project.
+        Callback function for Tools -> Record Highlighting. Alters the colors for the current project.
         :param event: A click or key press event.
         :return:
         """
         self.master.open_color_settings()
+
+    @enable_disable_wrapper(lambda *args: args[0].master)
+    def colleciton_settings_function(self, event=None):
+        """
+        Callback function for Tools -> Configure Log Collection. Alters the records being scraped for the current project.
+        :param event: A click or key press event.
+        :return:
+        """
+        self.master.open_collection_settings()
 
     @enable_disable_wrapper(lambda *args: args[0].master)
     def import_button_function(self, event=None):

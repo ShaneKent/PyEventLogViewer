@@ -18,7 +18,7 @@ class TagSettings(Toplevel):
 
         # Create and place the widgets
         self._init_widgets()
-        self.populate_tags(parent.current_project.config['events'])
+        self.populate_tags(parent.current_project.config.get('events', {}).get('colors', {}))
         self._place_widgets()
 
     def _init_widgets(self):
@@ -32,17 +32,22 @@ class TagSettings(Toplevel):
         self.listbox_container = Frame(self.container)
         self.tag_list = Treeview(self.listbox_container, columns=('source', 'id'), show='headings')
         # Set up the tree headings
-        self.tag_list.heading('source', text='Event Source', command=lambda: self.sort_column('id', False))
-        self.tag_list.heading('id', text='Event ID', command=lambda: self.sort_column('source', False))
+        self.tag_list.heading('source', text='Event Source', command=lambda: self.sort_column('source', False))
+        self.tag_list.heading('id', text='Event ID', command=lambda: self.sort_column('id', False))
         # Set up the tree columns
         self.tag_list.column('id', minwidth=0, width=60, stretch=NO)
         self.tag_list.column('source', minwidth=0, width=100, stretch=YES)
         self.tag_list.bind('<<TreeviewSelect>>', self.callback_update_select_background)
+        # Scrollbar settings
         self.vsb = Scrollbar(self.listbox_container, orient='vertical', command=self.tag_list.yview)
         self.hsb = Scrollbar(self.listbox_container, orient='horizontal', command=self.tag_list.xview)
-        # self.color_label = Label(self.container, text='The quick brown fox jumps over the lazy dog',
-        #                          background='#FFFFFF', relief=SUNKEN, borderwidth=1)
+        self.tag_list.configure(yscrollcommand=self.vsb.set)
+        self.tag_list.configure(xscrollcommand=self.hsb.set)
+        # Color preview
         self.color_block = Canvas(self.container, width=300, height=20, relief=SUNKEN)
+        self.color_block_rect = self.color_block.create_rectangle(0, 0, 301, 21, fill='#FFFFFF')
+        self.color_block_text = self.color_block.create_text(5, 5, anchor='nw',
+                                                             text='The quick brown fox jumps over the lazy dog.')
         # Sliders
         self.slider_container = Frame(self.container)
         # Red config
@@ -143,6 +148,8 @@ class TagSettings(Toplevel):
         :return:
         """
         column_elements = [(self.tag_list.set(k, col), k) for k in self.tag_list.get_children('')]
+        if col == 'id':
+            column_elements = [(int(v), k) for v, k in column_elements]
         column_elements.sort(reverse=reverse)
 
         for index, (val, k) in enumerate(column_elements):
@@ -166,19 +173,23 @@ class TagSettings(Toplevel):
         :param tags: A dictionary containing tag, color pairs. The color should be a hex string.
         :return:
         """
-        for tag, color in tags.items():
-            self.insert_tag(tag, color)
+        tag_config = ((source, event, color) for source, events in tags.items() for event, color in events.items())
+        for source, event, color in tag_config:
+            self.insert_tag(source, event, color)
 
-    def insert_tag(self, tag, color):
+    def insert_tag(self, source, event, color):
         """
         Inserts a tag into the ui and the tag list.
-        :param tag: The tag to insert
+        :param source: The event source.
+        :param event: The event id as a string.
         :param color: The color to associate with the tag as a string in hex format.
         :return:
         """
-        self.tag_list.insert('', 'end', values=tag.split('::'), tags=tag)
+        tag = f'{source}::{event}'
+        self.tag_list.insert('', 'end', values=(source, int(event)), tags=(tag,))
         self.tag_list.tag_configure(tag, background=color)
-        self.tags[tag] = color
+        self.tags[source] = self.tags.get(source, dict())
+        self.tags[source][event] = color
 
     def callback_update_select_background(self, event=None):
         """
@@ -188,9 +199,12 @@ class TagSettings(Toplevel):
         selection = self.tag_list.focus()
         if not selection:
             return
-        tag = '::'.join(str(v) for v in self.tag_list.item(selection)['values'])
-        hex_color = self.tags[tag]
-        self.color_block.create_rectangle(0, 0, 301, 21, fill=hex_color)
+        source, event = (str(v) for v in self.tag_list.item(selection)['values'])
+        hex_color = self.tags[source][event]
+
+        # self.color_block.create_rectangle(0, 0, 301, 21, fill=hex_color)
+        self.color_block.itemconfigure(self.color_block_rect, fill=hex_color)
+
         hex_color = hex_color.lstrip('#')
         r, g, b = tuple(int(hex_color[i:i + 2], 16) for i in range(0, 5, 2))
         self.r_slider.set(r)
@@ -205,12 +219,12 @@ class TagSettings(Toplevel):
         selection = self.tag_list.focus()
         if not selection:
             return
-        tag = '::'.join(str(v) for v in self.tag_list.item(selection)['values'])
+        source, event = (str(v) for v in self.tag_list.item(selection)['values'])
         r, g, b = tuple(map(int, (self.r_slider.get(), self.g_slider.get(), self.b_slider.get())))
         hex_color = f'#{r:02x}{g:02x}{b:02x}'
-        self.tags[tag] = hex_color
-        self.color_block.create_rectangle(0, 0, 301, 21, fill=hex_color)
-        self.tag_list.tag_configure(tag, background=hex_color)
+        self.tags[source][event] = hex_color
+        self.color_block.itemconfigure(self.color_block_rect, fill=hex_color)
+        self.tag_list.tag_configure('::'.join((source, event)), background=hex_color)
         self.changes_made = True
 
     def callback_add_tag(self, event=None):
@@ -225,8 +239,10 @@ class TagSettings(Toplevel):
         selection = self.tag_list.focus()
         if not selection:
             return
-        tag = '::'.join(str(v) for v in self.tag_list.item(selection)['values'])
-        self.tags.pop(tag)
+        source, event = (str(v) for v in self.tag_list.item(selection)['values'])
+        self.tags[source].pop(event)
+        if len(self.tags[source].keys()) == 0:
+            self.tags.pop(source)
         self.tag_list.delete(selection)
         self.changes_made = True
 
@@ -235,9 +251,10 @@ class TagSettings(Toplevel):
         Callback used to finish making changes to the tags and return to master.
         :return:
         """
-        self.master.current_project.config['events'] = self.tags
+        self.master.current_project.config['events'] = self.master.current_project.config.get('events', {})
+        self.master.current_project.config['events']['colors'] = self.tags
         if self.master.timeline is not None:
-            self.master.timeline.update_tags(self.tags)
+            self.master.timeline.update_tags(self.master.current_project.config['events']['colors'])
         self.master.changes_made |= self.changes_made
         self.destroy()
 
@@ -300,14 +317,14 @@ class TagPrompt(Toplevel):
         return False
 
     def callback_ok(self):
-        tag = f'{self.source_entry.get()}::{self.id_entry.get()}'
-        if not tag:
+        source, event = self.source_entry.get(), str(self.id_entry.get())
+        if not all((source, event)):
             messagebox.showerror('Error', 'You must enter a value.')
             return
-        if tag in self.master.tags:
+        if event in self.master.tags.get(source, {}):
             messagebox.showerror('Error', 'That tag already exists.')
             return
-        self.master.insert_tag(tag, '#FFFFFF')
+        self.master.insert_tag(source, event, '#FFFFFF')
         self.master.changes_made = True
         self.destroy()
 
