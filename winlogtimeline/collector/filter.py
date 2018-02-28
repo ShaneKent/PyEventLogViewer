@@ -36,6 +36,9 @@ def filter_logs(project, config, dedup):
             value = "'" + value + "'"
             if len(value.split()) == 1:
                 col = 'date(' + col + ')'
+        elif datatype == 'INTEGER':
+            try: int(value) #Non-integer values for int type columns are invalid
+            except: continue
         filters.append((col, operator, value))
         #config = [(col, operator, value)]
 
