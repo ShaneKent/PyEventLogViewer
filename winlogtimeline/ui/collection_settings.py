@@ -161,7 +161,7 @@ class CollectionSettings(Toplevel):
         :return:
         """
         custom_events = dict()
-        for source, elems in itertools.groupby(self.user_events, lambda e: e[0]):
+        for source, elems in itertools.groupby(sorted(self.user_events), lambda e: e[0]):
             custom_events[source] = [e[1] for e in elems]
         self.master.current_project.config['events']['custom'] = custom_events
         self.master.changes_made |= self.changes_made
