@@ -787,8 +787,6 @@ class Filters(Frame):
         super().__init__(parent, **kwargs)
         self.pack(side=TOP, fill=X)
 
-        self.filters = []
-
         self.advanced = Button(self, text="Filters", command=lambda: self.advanced_filter_function())
         self.advanced.pack(side=LEFT)
 
@@ -818,7 +816,7 @@ class Filters(Frame):
 
     @enable_disable_wrapper(lambda *args: args[0].master)
     def apply_filter(self):
-        logs = collector.filter_logs(self.master.current_project, self.filters, self.dedup_var)
+        logs = collector.filter_logs(self.master.current_project, self.master.current_project.config['filters'], self.dedup_var)
 
         self.master.create_new_timeline(records=logs)
         print('Found {} records'.format(len(logs)))

@@ -28,7 +28,6 @@ def filter_logs(project, config, dedup):
         elif operator == 'In':
             value = "(" + value + ")" #Add parentheses for sql list
 
-        #columns = [col_info[1] for col_info in info]
         idx = headers.index(col)
         col = columns[idx]
         datatype = types[idx] #Data type for this column
@@ -40,7 +39,6 @@ def filter_logs(project, config, dedup):
             try: int(value) #Non-integer values for int type columns are invalid
             except: continue
         filters.append((col, operator, value))
-        #config = [(col, operator, value)]
 
     # Timestamp offset
     offset = project.config['state']['timezone_offset']
