@@ -166,8 +166,8 @@ class GUI(Tk):
         Returns a list of records with the filter applied. Meant for use in the export process.
         :return:
         """
-        config = self.filter_section.filters
-        return collector.filter_logs(self.current_project, config)
+        config = self.current_project.config['filters']
+        return collector.filter_logs(self.current_project, config, IntVar(0)) #This should be dedup_var from Filters
 
     def create_new_timeline(self, headers=None, records=None):
         """
