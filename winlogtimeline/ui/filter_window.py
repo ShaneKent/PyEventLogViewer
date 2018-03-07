@@ -98,7 +98,7 @@ class FilterWindow(Toplevel):
 
         for f in self.checkbuttons:
             print('xzx')
-            f.grid(row=i, column=0, columnspan=1, sticky='NWES')
+            f.grid(row=i, column=0, columnspan=1, sticky='NWES', padx=padding)
             i += 1
 
         # Workspace block
@@ -159,5 +159,5 @@ class FilterWindow(Toplevel):
         for i in range(len(self.check_vars)):
             self.master.master.current_project.config['filters'][i][-1] = self.check_vars[i].get()
 
-        self.master.apply_filter()
+        self.master.master.create_new_timeline()
         self.destroy()

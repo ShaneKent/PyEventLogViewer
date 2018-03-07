@@ -185,8 +185,8 @@ class GUI(Tk):
             self.update_status_bar('Loading records...')
             # Get all records if they weren't provided
             if records is None:
-                # TODO: Modify this to apply any queries that may exist
-                records = self.current_project.get_all_logs()
+                records = self.filter_section.apply_filter()
+                # records = self.current_project.get_all_logs()
                 if len(records) == 0:
                     self.__enable__()
                     self.update_status_bar('No records to display. ')
@@ -814,14 +814,12 @@ class Filters(Frame):
         for col in tmp:
             colList.append(col)
 
-    @enable_disable_wrapper(lambda *args: args[0].master)
     def apply_filter(self):
-        logs = collector.filter_logs(self.master.current_project, self.master.current_project.config['filters'], self.dedup_var)
-
-        self.master.create_new_timeline(records=logs)
-        print('Found {} records'.format(len(logs)))
-        # self.master.status_bar.update_status('text')
-
+        if 'filters' in self.master.current_project.config:
+            return collector.filter_logs(self.master.current_project, self.master.current_project.config['filters'],
+                                         self.dedup_var)
+        else:
+            return self.master.current_project.get_all_logs()
 
     @enable_disable_wrapper(lambda *args: args[0].master)
     def clear_timeline(self):
