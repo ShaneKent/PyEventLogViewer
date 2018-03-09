@@ -166,8 +166,8 @@ class GUI(Tk):
         Returns a list of records with the filter applied. Meant for use in the export process.
         :return:
         """
-        config = self.filter_section.filters
-        return collector.filter_logs(self.current_project, config)
+        config = self.current_project.config['filters']
+        return collector.filter_logs(self.current_project, config, IntVar(0)) #This should be dedup_var from Filters
 
     def create_new_timeline(self, headers=None, records=None):
         """
@@ -185,8 +185,8 @@ class GUI(Tk):
             self.update_status_bar('Loading records...')
             # Get all records if they weren't provided
             if records is None:
-                # TODO: Modify this to apply any queries that may exist
-                records = self.current_project.get_all_logs()
+                records = self.filter_section.apply_filter()
+                # records = self.current_project.get_all_logs()
                 if len(records) == 0:
                     self.__enable__()
                     self.update_status_bar('No records to display. ')
@@ -787,17 +787,19 @@ class Filters(Frame):
         super().__init__(parent, **kwargs)
         self.pack(side=TOP, fill=X)
 
-        # Filter Label
-        # self.flabel = Label(self, text='Filters:', anchor=W, **kwargs)
-        # self.flabel.pack(side=LEFT)
-
-        self.filters = []
-
         self.advanced = Button(self, text="Filters", command=lambda: self.advanced_filter_function())
         self.advanced.pack(side=LEFT)
 
-        self.clear = Button(self, text="Clear", command=lambda: self.master.create_new_timeline())
+        self.clear = Button(self, text="Clear", command=lambda: self.clear_timeline())
         self.clear.pack(side=LEFT)
+
+        self.dedup_var = IntVar(value=0)
+        self.dedup = Checkbutton(self, text="Deduplicate", variable=self.dedup_var)
+        self.dedup.pack(side=LEFT)
+
+        #self.dedup_var.trace('w', self.apply_filter())
+
+
 
     def __disable__(self):
         self.flabel.config(state=DISABLED)
@@ -807,21 +809,21 @@ class Filters(Frame):
         self.flabel.config(state=NORMAL)
         self.columns.config(state=NORMAL)
 
-    '''def get_opList(self):
-        return self.opList'''
-
     def create_colList(self, colList):
         tmp = Record.get_headers()
         for col in tmp:
             colList.append(col)
 
     def apply_filter(self):
-        # config = self.filter_config()
-        logs = collector.filter_logs(self.master.current_project, self.filters)
+        if 'filters' in self.master.current_project.config:
+            return collector.filter_logs(self.master.current_project, self.master.current_project.config['filters'],
+                                         self.dedup_var)
+        else:
+            return self.master.current_project.get_all_logs()
 
-        self.master.create_new_timeline(records=logs)
-        print('Found {} records'.format(len(logs)))
-        # self.master.status_bar.update_status('text')
+    @enable_disable_wrapper(lambda *args: args[0].master)
+    def clear_timeline(self):
+        self.master.create_new_timeline()
 
     @enable_disable_wrapper(lambda *args: args[0].master)
     def advanced_filter_function(self, event=None):

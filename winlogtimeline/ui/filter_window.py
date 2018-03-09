@@ -2,6 +2,7 @@ from tkinter import *
 from tkinter import filedialog, messagebox
 from tkinter.ttk import *
 
+
 class FilterWindow(Toplevel):
     def __init__(self, parent, current_project):
         super().__init__(parent)
@@ -16,7 +17,6 @@ class FilterWindow(Toplevel):
         # Create and place the widgets
         self._init_widgets()
         self._place_widgets()
-
 
     def _init_widgets(self):
         """
@@ -39,7 +39,6 @@ class FilterWindow(Toplevel):
         # Filter columns drop down menu
         self.columns = OptionMenu(self.container, self.cvar, *self.colList)
         self.columns.config(width='17')
-
 
         self.opList = ['- Select Operation -']
 
@@ -64,12 +63,19 @@ class FilterWindow(Toplevel):
         self.check_vars = []
         self.checkbuttons = []
 
-        for i, filter in enumerate(self.master.filters):
+        try:
+            # Check if filters exists yet
+            filters = self.master.master.current_project.config['filters']
+        except KeyError:
+            self.master.master.current_project.config['filters'] = []
+            filters = self.master.master.current_project.config['filters']
+
+        for i, filter in enumerate(filters):
             label = filter[0] + ' ' + filter[1] + ' ' + filter[2]
             print(label)
             val = filter[3]
             self.check_vars.append(IntVar(value=val))
-            self.checkbuttons.append(Checkbutton(self.work_container, text=label,variable=self.check_vars[i]))
+            self.checkbuttons.append(Checkbutton(self.work_container, text=label, variable=self.check_vars[i]))
 
         self.cvar.trace_add('write', lambda *args: self.create_opList())
 
@@ -84,27 +90,23 @@ class FilterWindow(Toplevel):
         padding = 3
         i = 1
 
-        self.columns.grid(row=0, column = 0, columnspan=1, sticky='NW')
-        self.operations.grid(row=0, column = 1, columnspan=1, sticky='NW')
-        self.filterVal.grid(row=0, column = 2, columnspan=1, sticky='NW')
-        self.addButton.grid(row=0, column = 3, columnspan=1, sticky='NW')
-        self.qButton.grid(row=0, column = 4, columnspan=1, sticky='NW')
+        self.columns.grid(row=0, column=0, columnspan=1, sticky='NW')
+        self.operations.grid(row=0, column=1, columnspan=1, sticky='NW')
+        self.filterVal.grid(row=0, column=2, columnspan=1, sticky='NW')
+        self.addButton.grid(row=0, column=3, columnspan=1, sticky='NW')
+        self.qButton.grid(row=0, column=4, columnspan=1, sticky='NW')
 
         for f in self.checkbuttons:
             print('xzx')
-            i+=1
-
-
-            f.grid(row=i, column=0, columnspan=1, sticky='NWES')
-
+            f.grid(row=i, column=0, columnspan=1, sticky='NWES', padx=padding)
+            i += 1
 
         # Workspace block
         self.work_container.columnconfigure(0, weight=4)
-        self.work_container.grid(row=0, column=0, columnspan=5, rowspan=12, sticky='NW')
+        self.work_container.grid(row=1, column=0, columnspan=5, rowspan=12, sticky='NW')
 
-        #self.container.columnconfigure(0, weight=4)
+        # self.container.columnconfigure(0, weight=4)
         self.container.grid(row=0, column=0)
-
 
     def create_opList(self):
         inttype = {'Event ID', 'Record Number', 'Recovered', 'Timestamp (UTC)', 'Timestamp'}
@@ -128,23 +130,23 @@ class FilterWindow(Toplevel):
     def add_filter(self):
         padding = 3
 
-        config = [self.cvar.get(), self.ovar.get(), self.filterVal.get(), 1]
-        label = ' '.join(config[:3])
+        filter = [self.cvar.get(), self.ovar.get(), self.filterVal.get(), 1]
+        label = ' '.join(filter[:3])
 
-        #Disallow empty values
-        if config[0] == '- Select Column -' or config[1] == '- Select Operation -':
+        # Disallow empty values
+        if filter[0] == '- Select Column -' or filter[1] == '- Select Operation -':
             return
-        if config[2] == '' or config[2] == None:
+        if filter[2] == '' or filter[2] == None:
             print('No value entered!')
             return
 
-        #Disallow duplicate filters
-        for f in self.master.filters:
-            if f[0] == config[0] and f[1] == config[1] and f[2] == config[2]:
+        # Disallow duplicate filters
+        for f in self.master.master.current_project.config['filters']:
+            if f[0] == filter[0] and f[1] == filter[1] and f[2] == filter[2]:
                 print('Duplicate filter detected')
                 return
 
-        self.master.filters.append(config)
+        self.master.master.current_project.config['filters'].append(filter)
 
         idx = len(self.check_vars) + 1
         self.check_vars.append(IntVar(value=1))
@@ -155,7 +157,7 @@ class FilterWindow(Toplevel):
     def apply_filters(self):
 
         for i in range(len(self.check_vars)):
-            self.master.filters[i][-1] = self.check_vars[i].get()
+            self.master.master.current_project.config['filters'][i][-1] = self.check_vars[i].get()
 
-        self.master.apply_filter()
+        self.master.master.create_new_timeline()
         self.destroy()
