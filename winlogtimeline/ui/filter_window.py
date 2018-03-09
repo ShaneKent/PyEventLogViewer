@@ -72,7 +72,6 @@ class FilterWindow(Toplevel):
 
         for i, filter in enumerate(filters):
             label = filter[0] + ' ' + filter[1] + ' ' + filter[2]
-            print(label)
             val = filter[3]
             self.check_vars.append(IntVar(value=val))
             self.checkbuttons.append(Checkbutton(self.work_container, text=label, variable=self.check_vars[i]))
@@ -97,7 +96,6 @@ class FilterWindow(Toplevel):
         self.qButton.grid(row=0, column=4, columnspan=1, sticky='NW')
 
         for f in self.checkbuttons:
-            print('xzx')
             f.grid(row=i, column=0, columnspan=1, sticky='NWES', padx=padding)
             i += 1
 
@@ -137,13 +135,13 @@ class FilterWindow(Toplevel):
         if filter[0] == '- Select Column -' or filter[1] == '- Select Operation -':
             return
         if filter[2] == '' or filter[2] == None:
-            print('No value entered!')
+            #print('No value entered!')
             return
 
         # Disallow duplicate filters
         for f in self.master.master.current_project.config['filters']:
             if f[0] == filter[0] and f[1] == filter[1] and f[2] == filter[2]:
-                print('Duplicate filter detected')
+                #('Duplicate filter detected')
                 return
 
         self.master.master.current_project.config['filters'].append(filter)
