@@ -158,4 +158,5 @@ class FilterWindow(Toplevel):
             self.master.master.current_project.config['filters'][i][-1] = self.check_vars[i].get()
 
         self.master.master.create_new_timeline()
+        self.master.master.changes_made = True
         self.destroy()

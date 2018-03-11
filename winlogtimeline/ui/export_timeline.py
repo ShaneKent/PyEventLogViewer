@@ -329,9 +329,9 @@ class ExportWindow(Toplevel):
             header_row = '\n'.join(f'<th>{col}</th>' for col in columns)
             html_file.write(f'<tr>\n{header_row}\n</tr>\n')
             # Write the body
-            highlights = self.current_project.config['events']
+            highlights = self.current_project.config.get('events', {}).get('colors', {})
             for r in records:
-                bg_color = highlights.get(f'{r.event_source}::{r.event_id}', '#FFFFFF')
+                bg_color = highlights.get(r.event_source, {}).get(str(r.event_id), '#FFFFFF')
                 row = '\n'.join(f'<td>{data}</td>' for data in r.get_tuple())
                 html_file.write(f'<tr bgcolor="{bg_color}">\n{row}\n</tr>\n')
             html_file.write('</table>\n')

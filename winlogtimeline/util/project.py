@@ -182,8 +182,7 @@ class Project:
         self._conn.execute('DELETE FROM source_Files WHERE alias=?', (alias,))
         self._conn.execute('DELETE FROM logs WHERE alias=?', (alias,))
 
-
-    def filter_logs(self, config, dedup):
+    def filter_logs(self, dedup):
         """
         When given a list of log objects, returns only those that match the filters defined in config and project. The
         filters in project take priority over config.
@@ -191,6 +190,7 @@ class Project:
         :param dedup: Int var specifying deduplication
         :return: A list of logs that satisfy the filters specified in the configuration.
         """
+        config = self.config['filters']
         headers = Record.get_headers()
 
         info = self._conn.execute('PRAGMA table_info(logs);')  # (id, column name, type, not null, pk, auto-inc)

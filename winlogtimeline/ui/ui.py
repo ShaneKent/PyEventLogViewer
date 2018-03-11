@@ -1,3 +1,4 @@
+from sqlite3 import IntegrityError
 from tkinter import *
 from tkinter import messagebox, filedialog
 from tkinter import font
@@ -116,12 +117,13 @@ class GUI(Tk):
             if answer == messagebox.YES:
                 self.changes_made = False
                 self.current_project.close()
-                self.current_project = None
             elif answer == messagebox.NO:
-                self.current_project = None
+                pass
             else:
                 return
 
+        self.current_project = None
+        self.winfo_toplevel().title('PyEventLogViewer')
         if self.timeline is not None:
             self.timeline.pack_forget()
             self.timeline = None
@@ -145,6 +147,11 @@ class GUI(Tk):
                 collector.import_log(file_name, alias, self.current_project, '',
                                      lambda s: self.update_status_bar(text.format(status=s)),
                                      self.get_progress_bar_context_manager)
+            except IntegrityError:
+                self.update_status_bar(f'Error while importing log: {file_name} has already been imported')
+                self.current_project.cleanup_import(alias)
+                self.__enable__()
+                return
             except Exception as e:
                 self.update_status_bar(f'Error while importing log: {e.__class__.__name__}: {str(e)}')
                 self.current_project.cleanup_import(alias)
@@ -165,9 +172,7 @@ class GUI(Tk):
         Returns a list of records with the filter applied. Meant for use in the export process.
         :return:
         """
-        config = self.current_project.config['filters']
-        return util.project.filter_logs(self.current_project, config,
-                                        IntVar(0))  # This should be dedup_var from Filters
+        return self.current_project.filter_logs(IntVar(0))  # This should be dedup_var from Filters
 
     def create_new_timeline(self, headers=None, records=None):
         """
@@ -601,7 +606,7 @@ class MenuBar(Menu):
         if self.master.current_project is not None:
             self.master.update_status_bar('Project created at ' + self.master.current_project.get_path())
         else:
-            self.master.update_status_bar('Project creation failed')
+            self.master.__disable__()
 
     def open_project_function(self, event=None):
         """
@@ -634,6 +639,8 @@ class MenuBar(Menu):
         :param event: A click or key press event.
         :return:
         """
+        if self.master.current_project is None:
+            return
         self.master.current_project.save()
         self.master.update_status_bar('Project saved')
         self.master.changes_made = False
@@ -804,10 +811,8 @@ class Filters(Frame):
             colList.append(col)
 
     def apply_filter(self):
-        self.master.changes_made = True
         if 'filters' in self.master.current_project.config:
-            return self.master.current_project.filter_logs(self.master.current_project.config['filters'],
-                                                           self.dedup_var)
+            return self.master.current_project.filter_logs(self.dedup_var)
         else:
             return self.master.current_project.get_all_logs()
 
