@@ -6,7 +6,7 @@ import os.path
 """Setup configuration values"""
 # Package metadata
 NAME = 'PyEventLogViewer'
-VERSION = '0.0.1'
+VERSION = '1.0.0'
 # The name of the folder that packages are located in
 LIB_DIR = 'winlogtimeline'          # I'd prefer this to be lib, but PyCharm has issues with that - C 10/3/17
 # The name of the package to ship all packages under
@@ -29,6 +29,8 @@ SETUP_DEPENDENCIES = ['pytest-runner']
 
 TEST_DEPENDENCIES = ['pytest']
 
+SUPPORTED_VERSIONS = '>=3.6'
+
 """Automated argument formatting and setup call"""
 # Grab all of the packages
 pkgs = ['{root}.{module}'.format(root=PKG_DIR, module=pkg) for pkg in find_packages(where=LIB_DIR)]
@@ -47,5 +49,6 @@ setup(
     scripts=scripts,
     install_requires=DEPENDENCIES,
     setup_requires=SETUP_DEPENDENCIES,
-    tests_require=TEST_DEPENDENCIES
+    tests_require=TEST_DEPENDENCIES,
+    python_requires=SUPPORTED_VERSIONS
 )
