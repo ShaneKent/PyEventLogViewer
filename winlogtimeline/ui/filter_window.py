@@ -30,7 +30,7 @@ class FilterWindow(Toplevel):
         self.work_container = Frame(self.container)
 
         self.colList = ['- Select Column -']
-        self.master.create_colList(self.colList)
+        self.master.create_column_list(self.colList)
 
         # Column variable
         self.cvar = StringVar(self)
@@ -128,23 +128,23 @@ class FilterWindow(Toplevel):
     def add_filter(self):
         padding = 3
 
-        filter = [self.cvar.get(), self.ovar.get(), self.filterVal.get(), 1]
-        label = ' '.join(filter[:3])
+        filters = [self.cvar.get(), self.ovar.get(), self.filterVal.get(), 1]
+        label = ' '.join(filters[:3])
 
         # Disallow empty values
-        if filter[0] == '- Select Column -' or filter[1] == '- Select Operation -':
+        if filters[0] == '- Select Column -' or filters[1] == '- Select Operation -':
             return
-        if filter[2] == '' or filter[2] == None:
-            #print('No value entered!')
+        if filters[2] == '' or filters[2] is None:
+            messagebox.showerror('Invalid filter entered')
             return
 
         # Disallow duplicate filters
         for f in self.master.master.current_project.config['filters']:
-            if f[0] == filter[0] and f[1] == filter[1] and f[2] == filter[2]:
-                #('Duplicate filter detected')
+            if f[0] == filters[0] and f[1] == filters[1] and f[2] == filters[2]:
+                messagebox.showerror('Duplicate filter detected')
                 return
 
-        self.master.master.current_project.config['filters'].append(filter)
+        self.master.master.current_project.config['filters'].append(filters)
 
         idx = len(self.check_vars) + 1
         self.check_vars.append(IntVar(value=1))

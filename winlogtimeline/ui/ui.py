@@ -4,8 +4,7 @@ from tkinter import font
 from tkinter.ttk import *
 from threading import Thread
 
-from winlogtimeline import util
-from winlogtimeline import collector
+from winlogtimeline import util, collector
 from winlogtimeline.util.logs import Record
 from .new_project import NewProject
 from .tag_settings import TagSettings
@@ -167,7 +166,8 @@ class GUI(Tk):
         :return:
         """
         config = self.current_project.config['filters']
-        return collector.filter_logs(self.current_project, config, IntVar(0)) #This should be dedup_var from Filters
+        return util.project.filter_logs(self.current_project, config,
+                                        IntVar(0))  # This should be dedup_var from Filters
 
     def create_new_timeline(self, headers=None, records=None):
         """
@@ -186,7 +186,6 @@ class GUI(Tk):
             # Get all records if they weren't provided
             if records is None:
                 records = self.filter_section.apply_filter()
-                # records = self.current_project.get_all_logs()
                 if len(records) == 0:
                     self.__enable__()
                     self.update_status_bar('No records to display. ')
@@ -797,32 +796,26 @@ class Filters(Frame):
         self.dedup = Checkbutton(self, text="Deduplicate", variable=self.dedup_var)
         self.dedup.pack(side=LEFT)
 
-        #self.dedup_var.trace('w', self.apply_filter())
+        # self.dedup_var.trace('w', self.apply_filter())
 
-
-
-    def __disable__(self):
-        self.flabel.config(state=DISABLED)
-        self.columns.config(state=DISABLED)
-
-    def __enable__(self):
-        self.flabel.config(state=NORMAL)
-        self.columns.config(state=NORMAL)
-
-    def create_colList(self, colList):
+    def create_column_list(self, colList):
         tmp = Record.get_headers()
         for col in tmp:
             colList.append(col)
 
     def apply_filter(self):
+        self.master.changes_made = True
         if 'filters' in self.master.current_project.config:
-            return collector.filter_logs(self.master.current_project, self.master.current_project.config['filters'],
-                                         self.dedup_var)
+            return self.master.current_project.filter_logs(self.master.current_project.config['filters'],
+                                                           self.dedup_var)
         else:
             return self.master.current_project.get_all_logs()
 
     @enable_disable_wrapper(lambda *args: args[0].master)
     def clear_timeline(self):
+        self.master.changes_made = True
+        self.master.current_project.config['filters'] = [f[:3] + [0] for f in
+                                                         self.master.current_project.config.get('filters', [])]
         self.master.create_new_timeline()
 
     @enable_disable_wrapper(lambda *args: args[0].master)
