@@ -7,6 +7,9 @@ import os.path
 # Package metadata
 NAME = 'PyEventLogViewer'
 VERSION = '1.0.0'
+URL = 'https://github.com/ShaneKent/PyEventLogViewer'
+AUTHOR = 'Redacted Capstone Team'
+AUTHOR_EMAIL = 'pyeventlogviewer@gmail.com'
 # The name of the folder that packages are located in
 LIB_DIR = 'winlogtimeline'          # I'd prefer this to be lib, but PyCharm has issues with that - C 10/3/17
 # The name of the package to ship all packages under
@@ -44,6 +47,9 @@ scripts = list(chain(*script_glob_results))
 setup(
     name=NAME,
     version=VERSION,
+    url=URL,
+    author=AUTHOR,
+    author_email=AUTHOR_EMAIL,
     packages=pkgs,
     package_data=pkg_data,
     scripts=scripts,
